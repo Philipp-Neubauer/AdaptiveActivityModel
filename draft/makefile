@@ -6,10 +6,10 @@ HASDOCKER ?= $(shell which docker)
 DOC := $(if $(HASDOCKER), docker run --net host --rm -v $$PWD:/work -w /work docker.dragonfly.co.nz/squid-butterfish,)
 
 OUTPUT_DIR=build
-TARGET=report.pdf
+TARGET=draft.pdf
 
-KNITR = $(addsuffix .tex, $(basename $(shell find knitr -iname "*.rnw")))
-KNITR_BASE = $(addprefix $(OUTPUT_DIR)/, $(addsuffix .tex, $(basename $(wildcard *.rnw))))
+KNITR = $(addsuffix .tex, $(basename $(shell find . -iname "*.Rnw")))
+KNITR_BASE = $(addprefix $(OUTPUT_DIR)/, $(addsuffix .tex, $(basename $(wildcard *.Rnw))))
 KNIT_COMMAND = library(knitr);opts_chunk\$$set(warning=F, message = FALSE,echo=T,results='asis',error=FALSE,fig.lp='fig:',fig.path='images/');
 
 ####################################################
@@ -30,11 +30,11 @@ $(OUTPUT_DIR)/$(TARGET): $(TARGET:%.pdf=%.tex) $(OUTPUT_DIR) $(KNITR_BASE) #$(KN
 $(OUTPUT_DIR):
 	$(DOC) mkdir -p $(OUTPUT_DIR)
 
-$(OUTPUT_DIR)/%.tex: %.rnw $(KNITR)
+$(OUTPUT_DIR)/%.tex: %.Rnw $(KNITR)
 	$(DOC) Rscript --vanilla -e "$(KNIT_COMMAND) knit('$(<F)',output='$(OUTPUT_DIR)/$(@F)')"
 
-knitr/%_tab.tex: knitr/%_tab.rnw 
-	$(DOC) Rscript --vanilla -e "$(KNIT_COMMAND) knit('$(@D)/$(<F)', output = '$(@D)/$(@F)')"
+#knitr/%_tab.tex: knitr/%_tab.rnw 
+#	$(DOC) Rscript --vanilla -e "$(KNIT_COMMAND) knit('$(@D)/$(<F)', output = '$(@D)/$(@F)')"
 
 #knitr/%.Rdata: knitr/set_%.R
 #	cd $(@D); Rscript $(<F)
