@@ -14,8 +14,7 @@
 \begin{itemize}
 \item Animals will adapt acitivty levels to optimise available energy
 \item Growth is limited either by food capture, food processing capacity, or by available oxygen
-\item Temperature acts dierectly on rates that are determined by enzymatic activity: digestive activity (via maximum consumption) and metabolic cost. The scaling with temperature (determined by the activation energy $E_a$) is assumed the same for these processes.
-\item Temperature only acts on ecological rates (food aquisition) via optmisation given temperature driven changes in enzymatic rates.
+\item Temperature acts dierectly on rates that are determined by enzymatic activity: digestive activity (via maximum consumption) and metabolic cost. The scaling with temperature (determined by the activation energy $E_a$) is assumed the same for these processes. Consequently, temperature only acts on ecological rates (food aquisition) via optimisation given temperature driven changes in enzymatic rates.
 
 
 \end{itemize}
@@ -28,16 +27,16 @@ The model is written in terms of carbon (or energy) and oxygen balance equations
 
 \begin{align}
 f_C &= \frac{\tau }{\tau  + \frac{h c_T w^{q-p}}{\gamma\Theta} } \\
-P_C &= (1-\beta-\phi)f_C h c_T w^q  -(1+\tau \delta)c_T k w^n \\
-  &= S_C - D_C \\
-P_{0_2} &= f_{O_2}w^n - \omega(\beta f_C h c_T w^q +(1+\tau \delta) c_T k w^n) \\
-        &= S_{O_2} - D_{O_2}
+P_C &= S_C - D_C \\
+  &=(1-\beta-\phi)f_C h c_T w^q  -(1+\tau \delta)c_T k w^n \\ 
+P_{0_2} &= S_{O_2} - D_{O_2}
+        &= f_{O_2}w^n - \omega(\beta f_C h c_T w^q +(1+\tau \delta) c_T k w^n) \\
 \end{align}
 
 
-where $f$ is the feeding level ([0,1]), determined by the fraction of time spent foraging (or proportion of maximum attack rate) $\tau$, consumption rate $\gamma\Theta$ (search rate $\gamma$ times prey avalibility $\Theta$) and maximum consumption $h$. In the following, we will refer to $\tau$ as the activity fraction for sake of generality. Maximum consumption, being determined by digestive (enzymatic) processes, is assumed to scale with temperature as $c_T = e^{E_a(T-T_0)/kTT_0}$. Available carbon $P$ is determined by supply ($S_C$) from prey consumption ($f_C h c_T w^q$), with $\beta$ a loss due to specific dynamic action (SDA, or heat increment; the energy spent absorbing food), and $\phi$ is the exceted fraction of captured food. Metabolic costs ($D_C$) are those of standard metabolism ($k$), as well as active metabolism (scaled in units of standard metabolsim as $\delta k$), with the activity fraction $\tau$ determining the fraction of time that the active metabolism cost applies.
+where $f$ is the feeding level ([0,1]), determined by the fraction of time spent foraging (or proportion of maximum attack rate) $\tau$, consumption rate $\gamma w^p \Theta$ (search rate $\gamma w^p$ times prey avalibility $\Theta$) and maximum consumption $h w^q$. In the following, we will refer to $\tau$ as the activity fraction for sake of generality. Maximum consumption, being determined by digestive (enzymatic) processes, is assumed to scale with temperature as $c_T = e^{E_a(T-T_0)/kTT_0}$. Available carbon $P_C$ is determined by supply ($S_C$) from prey consumption ($f_C h c_T w^q$), with $\beta \approx 0.15$ a loss due to specific dynamic action (SDA, or heat increment; the energy spent absorbing food), and $\phi \approx 0.25$ is the fraction of food excreted and egested. Metabolic costs ($D_C$) are those of standard metabolism ($k w^n$), as well as active metabolism (scaled in units of standard metabolsim as $\delta k w^n$), with the activity fraction $\tau$ determining the fraction of time that the active metabolism cost applies.
 
-The oxygen budget determines the metabolic scope $S_{0_2}$. Metabolic scope is the difference between oxygen supply $S_{O_2}/w^n=f_{O_2}$, the amount of oxgygen supplied per unit weight, and oxygen demand. Demand ($D_{O_2}$) is the sum of oxygen used for SDA ($\beta f_C h c_T w^q$) and catabolism ($[1+\tau \delta] c_T k w^n$), with $\omega$ determining amount of oxygen required per unit of metabolised carbon. Oxygen supply as a function of ambient oxygen is assumed to follow a saturating function, with $P50$ the point where supply has dropped by 50\% relative to the saturation level $l$. Assuming an asymptotic functional form, we can write $f_{O_2}=l(1-e^{O_2\log(0.5)/P50})$.
+The oxygen budget determines the metabolic scope $S_{0_2}$. Metabolic scope is the difference between oxygen supply $S_{O_2}/w^n=f_{O_2}$, the amount of oxgygen supplied per unit weight, and oxygen demand. Demand ($D_{O_2}$) is the sum of oxygen used for SDA ($\beta f_C h c_T w^q$) and catabolism ($[1+\tau \delta] c_T k w^n$), with $\omega$ determining amount of oxygen required per unit of metabolised carbon (note: oxygen is measured in the same units as the carbon. To find the actual amount of oxygen used multiply by the amount of oxygen used to respire one unit of carbon). Oxygen supply as a function of ambient oxygen is assumed to follow a saturating function, with $P_{50}$ the point where supply has dropped by 50\% relative to the saturation level $l$. Assuming an asymptotic functional form, we can write $f_{O_2}=l(1-e^{O_2\log(0.5)/P50})$\footnote{Could also use the same functional form as the consumption of food for simplicity: $f_{O_2} = \Gamma \Theta_{O2}/{\Gamma \Theta_{O2} + h_{O2}$ = \Theta_{O2}/(\Theta_{O2} + P_{50}).}
 
 We now assume that organisms will adjust their activity level to maximise available energy under energetic and oxygen constraints. Energetically, the optimal activity level ($\tau_{opt}$) is found at $\frac{dP}{d\tau}=0$, which gives
 
@@ -61,7 +60,10 @@ Both temperature and oxygen will influence $\tau$, such that at a given temperat
 Assuming a constant investment $r$ in reproduction with weight ($D_{C_r}=rm$), the energy available for growth is directly proportional to $P_C^{\tau_{T,O2}}$, and is thus a function of temperature and oxygen. Furthermore, organism size $m_{\infty}$, determined as the mass $m$ where $S_C^{\tau_{T,O2}} = D_C^{\tau_{T,O2}} + D_{C_r}^{\tau_{T,O2}}$, is also determined by environmental factors.
 
 
-
+\begin{table}
+\caption{Parameters}
+\begin{tabular}
+\end{table}
 
 
 \end{document}
