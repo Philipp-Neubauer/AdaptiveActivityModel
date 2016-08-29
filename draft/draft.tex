@@ -5,7 +5,7 @@
 \author{Philipp Neubauer \and Ken H. Andersen}
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
+
 \maketitle
 
 \section{Setting up the model}
@@ -13,7 +13,7 @@
 \subsection{Key assumptions}
 \begin{itemize}
 \item Animals will adapt acitivty levels to optimise available energy
-\item Oxygen is limiting, but not driving energy/mass aquisition
+\item Growth is limited either by food capture, food processing capacity, or by available oxygen
 \item Temperature acts dierectly on rates that are determined by enzymatic activity: digestive activity (via maximum consumption) and metabolic cost. The scaling with temperature (determined by the activation energy $E_a$) is assumed the same for these processes.
 \item Temperature only acts on ecological rates (food aquisition) via optmisation given temperature driven changes in enzymatic rates.
 
@@ -27,17 +27,17 @@ In the adaptive activity model, ectotherms adjust the relative amounts of time (
 The model is written in terms of carbon (or energy) and oxygen balance equations:
 
 \begin{align}
-f &= \frac{\tau }{\tau  + \frac{h c_T w^{q-p}}{\gamma} } \\
-P_C &= (1-\beta-\phi)f h c_T w^q  -(1+\tau \delta)c_T k w^n \\
+f_C &= \frac{\tau }{\tau  + \frac{h c_T w^{q-p}}{\gamma\Theta} } \\
+P_C &= (1-\beta-\phi)f_C h c_T w^q  -(1+\tau \delta)c_T k w^n \\
   &= S_C - D_C \\
-P_{0_2} &= f(O_2)w^n - \omega(\beta f h c_T w^q +(1+\tau \delta) c_T k w^n) \\
+P_{0_2} &= f_{O_2}w^n - \omega(\beta f_C h c_T w^q +(1+\tau \delta) c_T k w^n) \\
         &= S_{O_2} - D_{O_2}
 \end{align}
 
 
-where $f$ is the feeding level ([0,1]), determined by the fraction of time spent foraging (or proportion of maximum attack rate) $\tau$, consumption rate $\gamma$ (search rate times prey density) and maximum consumption $h$. In the following, we will refer to $\tau$ as the activity fraction for sake of generality. Maximum consumption, being determined by digestive (enzymatic) processes, is assumed to scale with temperature as $c_T = e^{E_a(T-T_0)/kTT_0}$. Available carbon $P$ is determined by supply ($S_C$) from prey consumption ($f h c_T w^q$), with $\beta$ a loss due to specific dynamic action (SDA, or heat increment; the energy spent absorbing food), and $\phi$ is the exceted fraction of captured food. Metabolic costs ($D_C$) are those of standard metabolism ($k$), as well as active metabolism (scaled in units of standard metabolsim as $\delta k$), with the activity fraction $\tau$ determining the fraction of time that the active metabolism cost applies.
+where $f$ is the feeding level ([0,1]), determined by the fraction of time spent foraging (or proportion of maximum attack rate) $\tau$, consumption rate $\gamma\Theta$ (search rate $\gamma$ times prey avalibility $\Theta$) and maximum consumption $h$. In the following, we will refer to $\tau$ as the activity fraction for sake of generality. Maximum consumption, being determined by digestive (enzymatic) processes, is assumed to scale with temperature as $c_T = e^{E_a(T-T_0)/kTT_0}$. Available carbon $P$ is determined by supply ($S_C$) from prey consumption ($f_C h c_T w^q$), with $\beta$ a loss due to specific dynamic action (SDA, or heat increment; the energy spent absorbing food), and $\phi$ is the exceted fraction of captured food. Metabolic costs ($D_C$) are those of standard metabolism ($k$), as well as active metabolism (scaled in units of standard metabolsim as $\delta k$), with the activity fraction $\tau$ determining the fraction of time that the active metabolism cost applies.
 
-The oxygen budget determines the metabolic scope $S_{0_2}$. Metabolic scope is the difference between oxygen supply $S_{O_2}/w^n=f(O_2)$, the amount of oxgygen supplied per unit weight, and oxygen demand. Demand ($D_{O_2}$) is the sum of oxygen used for SDA ($\beta f h c_T w^q$) and catabolism ($[1+\tau \delta] c_T k w^n$), with $\omega$ determining amount of oxygen required per unit of metabolised carbon. Oxygen supply as a function of ambient oxygen is assumed to follow a saturating function, with $P50$ the point where supply has dropped by 50\% relative to the saturation level $l$. Assuming an asymptotic functional form, we can write $f(O_2)=l(1-e^{O_2\log(0.5)/P50})$.
+The oxygen budget determines the metabolic scope $S_{0_2}$. Metabolic scope is the difference between oxygen supply $S_{O_2}/w^n=f_{O_2}$, the amount of oxgygen supplied per unit weight, and oxygen demand. Demand ($D_{O_2}$) is the sum of oxygen used for SDA ($\beta f_C h c_T w^q$) and catabolism ($[1+\tau \delta] c_T k w^n$), with $\omega$ determining amount of oxygen required per unit of metabolised carbon. Oxygen supply as a function of ambient oxygen is assumed to follow a saturating function, with $P50$ the point where supply has dropped by 50\% relative to the saturation level $l$. Assuming an asymptotic functional form, we can write $f_{O_2}=l(1-e^{O_2\log(0.5)/P50})$.
 
 We now assume that organisms will adjust their activity level to maximise available energy under energetic and oxygen constraints. Energetically, the optimal activity level ($\tau_{opt}$) is found at $\frac{dP}{d\tau}=0$, which gives
 
@@ -50,9 +50,9 @@ We assume that that the metabolic scope dictates the upper limit of this activit
 \begin{math}
      \begin{aligned}
 \tau_{max} &= \frac{1}{2 \gamma \delta c_T k \omega} m^{-n-p} \\
-           &((-\gamma f(O_2) m^{n+p}+\gamma c_T k \omega m^{n+p}+\delta k c_T^2 h \omega m^{n+q}+\beta c_T \gamma h \omega m^{p+q})^2 - \\ 
-           &4 \gamma \delta c_T k \omega m^{n+p} (k h c_T^2 \omega m^{n+q}-f h c_T m^{n+q}))^{0.5} \\
-          &\gamma f m^{n+p}-\gamma k \omega c_T m^{n+p}-\delta k h c_T^2 \omega m^{n+q}-\beta \gamma h c_T \omega m^{p+q})
+           &((-\gamma f_{O_2} m^{n+p}+\gamma c_T k \omega m^{n+p}+\delta k c_T^2 h \omega m^{n+q}+\beta c_T \gamma h \omega m^{p+q})^2 - \\ 
+           &4 \gamma \delta c_T k \omega m^{n+p} (k h c_T^2 \omega m^{n+q}-f_C h c_T m^{n+q}))^{0.5} \\
+          &\gamma f_C m^{n+p}-\gamma k \omega c_T m^{n+p}-\delta k h c_T^2 \omega m^{n+q}-\beta \gamma h c_T \omega m^{p+q})
           \end{aligned}
 \end{math}
 
