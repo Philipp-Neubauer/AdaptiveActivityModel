@@ -1,5 +1,8 @@
 \documentclass{article}
 \usepackage{amsmath}
+\usepackage{caption} 
+\usepackage{array} 
+\captionsetup[table]{singlelinecheck=false}
 
 \title{Interactive effects of oxygen and temperature on ectotherms}
 \author{Philipp Neubauer \and Ken H. Andersen}
@@ -29,8 +32,8 @@ The model is written in terms of carbon (or energy) and oxygen balance equations
 f_C &= \frac{\tau }{\tau  + \frac{h c_T w^{q-p}}{\gamma\Theta} } \\
 P_C &= S_C - D_C \\
   &=(1-\beta-\phi)f_C h c_T w^q  -(1+\tau \delta)c_T k w^n \\ 
-P_{0_2} &= S_{O_2} - D_{O_2}
-        &= f_{O_2}w^n - \omega(\beta f_C h c_T w^q +(1+\tau \delta) c_T k w^n) \\
+P_{0_2} &= S_{O_2} - D_{O_2} \\
+        &= f_{O_2}w^n - \omega(\beta f_C h c_T w^q +(1+\tau \delta) c_T k w^n)
 \end{align}
 
 
@@ -38,7 +41,7 @@ where $f$ is the feeding level ([0,1]), determined by the fraction of time spent
 
 
 
-The oxygen budget determines the metabolic scope $S_{0_2}$. Metabolic scope is the difference between oxygen supply $S_{O_2}/w^n=f_{O_2}$, the amount of oxgygen supplied per unit weight, and oxygen demand. Demand ($D_{O_2}$) is the sum of oxygen used for SDA ($\beta f_C h c_T w^q$) and catabolism ($[1+\tau \delta] c_T k w^n$), with $\omega$ determining amount of oxygen required per unit of metabolised carbon (note: oxygen is measured in the same units as the carbon. To find the actual amount of oxygen used multiply by the amount of oxygen used to respire one unit of carbon). Oxygen supply as a function of ambient oxygen is assumed to follow a saturating function, with $P_{50}$ the point where supply has dropped by 50\% relative to the saturation level $l$. Assuming an asymptotic functional form, we can write $f_{O_2}=l(1-e^{O_2\log(0.5)/P50})$\footnote{Could also use the same functional form as the consumption of food for simplicity: $f_{O_2} = \Gamma \Theta_{O2}/{\Gamma \Theta_{O2} + h_{O2}$ = \Theta_{O2}/(\Theta_{O2} + P_{50}).}
+The oxygen budget determines the metabolic scope $S_{0_2}$. Metabolic scope is the difference between oxygen supply $S_{O_2}/w^n=f_{O_2}$, the amount of oxgygen supplied per unit weight, and oxygen demand. Demand ($D_{O_2}$) is the sum of oxygen used for SDA ($\beta f_C h c_T w^q$) and catabolism ($[1+\tau \delta] c_T k w^n$), with $\omega$ determining amount of oxygen required per unit of metabolised carbon (note: oxygen is measured in the same units as the carbon. To find the actual amount of oxygen used multiply by the amount of oxygen used to respire one unit of carbon). Oxygen supply as a function of ambient oxygen is assumed to follow a saturating function, with $P_{50}$ the point where supply has dropped by 50\% relative to the saturation level $l$. Assuming an asymptotic functional form, we can write $f_{O_2}=l(1-e^{O_2\log(0.5)/P50})$ \footnote{Could also use the same functional form as the consumption of food for simplicity: $f_{O_2} = \Gamma \Theta_{O_2}/\Gamma \Theta_{O_2} + h_{O_2} = \Theta_{O_2}/(\Theta_{O_2} + P_{50}).$}
 
 We now assume that organisms will adjust their activity level to maximise available energy under energetic and oxygen constraints. Energetically, the optimal activity level ($\tau_{opt}$) is found at $\frac{dP}{d\tau}=0$, which gives
 
@@ -57,9 +60,9 @@ We assume that that the metabolic scope dictates the upper limit of this activit
           \end{aligned}
 \end{math}
 
-Both temperature and oxygen will influence $\tau$, such that at a given temperature and oxygen concentration, $\tau_{T,O2} = min{\tau_{opt},\tau_{max}}$, meaning we assume that animals will adapt their effort to optimise energy gain ($P_C^{\tau_{T,O2}}$, the net production at $\tau_{T,O2}$).
+Both temperature and oxygen will influence $\tau$, such that at a given temperature and oxygen concentration, $\tau_{T,O_2} = \text{min}\left( \tau_{opt},\tau_{max} \right)$, meaning we assume that animals will adapt their effort to optimise energy gain ($P_C^{\tau_{T,O_2}}$, the net production at $\tau_{T,O_2}$).
 
-Assuming a constant investment $r$ in reproduction with weight ($D_{C_r}=rm$), the energy available for growth is directly proportional to $P_C^{\tau_{T,O2}}$, and is thus a function of temperature and oxygen. Furthermore, organism size $m_{\infty}$, determined as the mass $m$ where $S_C^{\tau_{T,O2}} = D_C^{\tau_{T,O2}} + D_{C_r}^{\tau_{T,O2}}$, is also determined by environmental factors.
+Assuming a constant investment $r$ in reproduction with weight ($D_{C_r}=rm$), the energy available for growth is directly proportional to $P_C^{\tau_{T,O_2}}$, and is thus a function of temperature and oxygen. Furthermore, organism size $m_{\infty}$, determined as the mass $m$ where $S_C^{\tau_{T,O_2}} = D_C^{\tau_{T,O_2}} + D_{C_r}^{\tau_{T,O_2}}$, is also determined by environmental factors.
 
 
 \begin{table}
@@ -69,16 +72,15 @@ Description & Value \\
 \hline
 Specific dynamic action & $\beta = 0.15$ \\
 Egestion and excretion & $\phi = 0.25$ \\
-Food concentration$^1$ & $\Theta \gamma \approx h w^{p-q}$ (g$_C$/time) \\
-Coef.~for clearance rate$^1$ & $\gamma$ \\
-Coef.~for maximum consumption rate$ & $h \approx 5 $g$_{WW}^{1-n}$/yr \\
-Critical feeding level & $\f_c \approx 0.1 $\\
+Consumption rate$^1$ & $\Theta \gamma \approx h w^{p-q}$ (g$_C$/time) \\
+Coef.~for maximum consumption rate & $h \approx 5 $g$_{WW}^{1-n}$/yr \\
+Critical feeding level & $f_c \approx 0.1 $\\
 Activity coefficient & $\delta \approx 1$ \\
 Exponent for max.~consumption & $q=0.75$ \\
 Exponent for clearance rate & $p=0.8$ \\
 Exponent for std.~metabolism & $n=0.75$ \\
 \hline
-\multicolumn{2}{p@\textwidth}{This is under the assumption that the amount of encountered food is roughly independent of body size.  This gives and order-of-magnitude estimate of the product $\Theta \gamma $.}
+\multicolumn{2}{p{\textwidth}}{$^1$ This is under the assumption that the amount of encountered food $\Theta$ is roughly independent of body size.  This gives and order-of-magnitude estimate of the product $\Theta \gamma $.}
 \end{tabular}
 \end{table}
 
