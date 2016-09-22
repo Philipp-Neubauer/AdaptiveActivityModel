@@ -41,26 +41,70 @@ where $f$ is the feeding level ([0,1]), determined by the fraction of time spent
 
 
 
-The oxygen budget determines the metabolic scope $S_{0_2}$. Metabolic scope is the difference between oxygen supply $S_{O_2}/w^n=f_{O_2}$, the amount of oxgygen supplied per unit weight, and oxygen demand. Demand ($D_{O_2}$) is the sum of oxygen used for SDA ($\beta f_C h c_T w^q$) and catabolism ($[1+\tau \delta] c_T k w^n$), with $\omega$ determining amount of oxygen required per unit of metabolised carbon (note: oxygen is measured in the same units as the carbon. To find the actual amount of oxygen used multiply by the amount of oxygen used to respire one unit of carbon). Oxygen supply as a function of ambient oxygen is assumed to follow a saturating function, with $P_{50}$ the point where supply has dropped by 50\% relative to the saturation level $l$. Assuming an asymptotic functional form, we can write $f_{O_2}=l(1-e^{O_2\log(0.5)/P50})$ \footnote{Could also use the same functional form as the consumption of food for simplicity: $f_{O_2} = \Gamma \Theta_{O_2}/\Gamma \Theta_{O_2} + h_{O_2} = \Theta_{O_2}/(\Theta_{O_2} + P_{50}).$}
+The oxygen budget determines the metabolic scope $S_{0_2}$. Metabolic scope is the difference between oxygen supply $S_{O_2}/w^n=f_{O_2}$, the amount of oxgygen supplied per unit weight, and oxygen demand. Demand ($D_{O_2}$) is the sum of oxygen used for SDA ($\beta f_C h c_T w^q$) and catabolism ($[1+\tau \delta] c_T k w^n$), with $\omega$ determining amount of oxygen required per unit of metabolised carbon (note: oxygen is measured in the same units as the carbon. To find the actual amount of oxygen used multiply by the amount of oxygen used to respire one unit of carbon). 
 
-We now assume that organisms will adjust their activity level to maximise available energy under energetic and oxygen constraints. Energetically, the optimal activity level ($\tau_{opt}$) is found at $\frac{dP}{d\tau}=0$, which gives
+The maximum oxygen consumption---usually called the maximum metabolic rate (MMR), or active metbolic rate---is the oxygen consumption during maximal activity level that can be sustained over some time. This level is determined by oxygen delivery to organs and muscles. At constant temperature, oxygen supply as a function of ambient oxygen is assumed, in line with experimental evidence, to follow a saturating function. We specify $P_{50}$ as the point where the MMR (or oxygen supply) has dropped by 50\% relative to the saturation level $l$ \footnote{Could also use the same functional form as the consumption of food for simplicity: $f_{O_2} = \Gamma \Theta_{O_2}/\Gamma \Theta_{O_2} + h_{O_2} = \Theta_{O_2}/(\Theta_{O_2} + P_{50}).$}. Oxygen supply, and hence the MMR, are usually found to be temperature dependant (CITE), with a peak in MMR at an optimal temperature. We follow Lefrancois \& Claireaux (2003) and Strasbaka \& Gnauck (1985) and use a dome shaped function that peaks at the otpimal temperature. Thus:
 
 \begin{align}
-\tau_{opt} = \frac{w^{-n-2 p} \sqrt{(1-\beta-\phi)\gamma^3 \delta k c_T h^2  w^{n+3 p+2 q}}}{\gamma^2 \delta k}-\frac{c_T h w^{q-p}}{\gamma}.
+f_{O_2}&=l(1-e^{O_2\log(0.5)/P50}),\\
+l&=\zeta(\frac{T_{\text{max}}-T}{T_{\text{max}}-T_{\text{opt}}})^\eta \times \exp(-\eta\frac{T_{\text{max}}-T}{T_{\text{max}}-T_{\text{opt}}}),
 \end{align}
 
-We assume that that the metabolic scope dictates the upper limit of this activity, such that at $\tau_{max}$, oxygen demand $D_{0_2}$ equals total supply $S_{0_2}$. Solving for $\tau_{max}$, the expression is far less elegant:
+with $f_{O_2}$ the oxygen supply (MMR), $T_{\text{max}}$ the lethal temperature for the species, $T_{\text{opt}}$ the temperature at which the MMR is optimised and $\eta$ determines the width of the dome-shape, and $\zeta$ its height.
+
+<<echo=FALSE>>=
+library(knitr)
+opts_chunk$set(warning=F, message = FALSE,echo=F,results='asis',error=FALSE,fig.lp='fig:',fig.path='images/')
+@
+
+<<O2_fig,fig.cap='Maximum metabolic rate as a function of temperature', fig.width=8, fig.height=4, echo=FALSE, out.width='\\linewidth'>>=
+
+grid <- expand.grid(eta = c(0.5,2,5),
+                    Topt = c(10,15,20))
+
+O2fun <- function(x) {
+  ts = with(x,((30-seq(1,30,l=1000))/(30-Topt))^eta*exp(-eta*(30-seq(1,30,l=1000))/(30-Topt)))
+  ts = ts/max(ts)
+}
+
+require(dplyr)
+require(purrr)
+require(ggplot2)
+g <- grid %>% 
+  by_row(~O2fun(.x), .collate='rows') %>%
+  group_by(.row) %>%
+  mutate(Temperature=seq(1,30,l=1000)) 
+
+  ggplot(g) + 
+  geom_line(aes(x = Temperature, 
+                y = .out,
+                linetype=factor(eta))) + 
+  theme_bw() + 
+  facet_grid(Topt~.) +
+  scale_linetype_discrete(bquote(eta)) + 
+  ylab(paste(expression(O_2, supply))) # + 
+  #scale_color_discrete(bquote(T[opt]), h.start = 180)
+
+@
+
+We now assume that organisms will adjust their activity level to maximise available energy under energetic and oxygen constraints. Energetically, the optimal activity level ($\tau_{\text{opt}}$) is found at $\frac{dP}{d\tau}=0$, which gives
+
+\begin{align}
+\tau_{\text{opt}} = \frac{w^{-n-2 p} \sqrt{(1-\beta-\phi)\gamma^3 \delta k c_T h^2  w^{n+3 p+2 q}}}{\gamma^2 \delta k}-\frac{c_T h w^{q-p}}{\gamma}.
+\end{align}
+
+We assume that that the metabolic scope dictates the upper limit of this activity, such that at $\tau_{\text{max}}$, oxygen demand $D_{0_2}$ equals total supply $S_{0_2}$. Solving for $\tau_{\text{max}}$, the expression is far less elegant:
 
 \begin{math}
      \begin{aligned}
-\tau_{max} &= \frac{1}{2 \gamma \delta c_T k \omega} m^{-n-p} \\
+\tau_{\text{max}} &= \frac{1}{2 \gamma \delta c_T k \omega} m^{-n-p} \\
            &((-\gamma f_{O_2} m^{n+p}+\gamma c_T k \omega m^{n+p}+\delta k c_T^2 h \omega m^{n+q}+\beta c_T \gamma h \omega m^{p+q})^2 - \\ 
            &4 \gamma \delta c_T k \omega m^{n+p} (k h c_T^2 \omega m^{n+q}-f_C h c_T m^{n+q}))^{0.5} \\
           &\gamma f_C m^{n+p}-\gamma k \omega c_T m^{n+p}-\delta k h c_T^2 \omega m^{n+q}-\beta \gamma h c_T \omega m^{p+q})
           \end{aligned}
 \end{math}
 
-Both temperature and oxygen will influence $\tau$, such that at a given temperature and oxygen concentration, $\tau_{T,O_2} = \text{min}\left( \tau_{opt},\tau_{max} \right)$, meaning we assume that animals will adapt their effort to optimise energy gain ($P_C^{\tau_{T,O_2}}$, the net production at $\tau_{T,O_2}$).
+Both temperature and oxygen will influence $\tau$, such that at a given temperature and oxygen concentration, $\tau_{T,O_2} = \text{min}\left( \tau_{\text{opt}},\tau_{\text{max}} \right)$, meaning we assume that animals will adapt their effort to optimise energy gain ($P_C^{\tau_{T,O_2}}$, the net production at $\tau_{T,O_2}$).
 
 Assuming a constant investment $r$ in reproduction with weight ($D_{C_r}=rm$), the energy available for growth is directly proportional to $P_C^{\tau_{T,O_2}}$, and is thus a function of temperature and oxygen. Furthermore, organism size $m_{\infty}$, determined as the mass $m$ where $S_C^{\tau_{T,O_2}} = D_C^{\tau_{T,O_2}} + D_{C_r}^{\tau_{T,O_2}}$, is also determined by environmental factors.
 
