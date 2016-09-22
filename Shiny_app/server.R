@@ -6,7 +6,7 @@ library(ggvis)
 
 source('FA_model.R')
 
-server = function(input, output) {
+server = function(input, output, session) {
   
   values <- reactive({
     
@@ -25,7 +25,8 @@ server = function(input, output) {
            omega=input$omega,
            Ea=input$Ea,
            temp=seq(input$temp[1],input$temp[2],l=100),
-           O2ref=input$O2ref,
+           Topt=input$Topt,
+           O2crit=input$O2crit,
            r=input$r,
            temp_ref=input$temp_ref)
     
@@ -39,7 +40,7 @@ server = function(input, output) {
   
   output$o2slide <- renderUI({
     
-    sliderInput('o2slide', input$variable, min=as.numeric(input$min), max=as.numeric(input$max), value=50,
+    sliderInput('o2slide', input$variable, min=as.numeric(input$min), max=as.numeric(input$max), value=(as.numeric(input$max)-as.numeric(input$min))/2,
                 animate = animationOptions(interval=200))
     
   })
@@ -73,8 +74,8 @@ server = function(input, output) {
     pd$tau_uc <- out
     
     v[[input$variable]] <- ifelse(is.null(input$o2slide),5,input$o2slide)
-    
-    O2 = O2_supply(seq(1,10,l=100),level=v$lO,P50 = v$P50)
+    #browser()
+    O2 = O2_supply(O2=seq(1,10,l=length(v$temp)),Topt=v$Topt,O2crit=v$O2crit,Tmax=v$temp[length(v$temp)],T=v$Topt,delta=v$lO,omega=1.8,P50=v$P50,n=v$n)
     tau_o2 = sapply(eval_tau_max_o2(f=O2,omega = v$omega,
                                  gamma=v$gamma,
                                  delta=v$delta,
@@ -86,28 +87,19 @@ server = function(input, output) {
                                  q=v$q,
                                  n=v$n,
                                  m=v$m
-    ),min,
-    eval_tau_eq(gamma=v$gamma,
-                delta=v$delta,
-                phi=v$phi,
-                h=v$h,
-                beta=v$beta,
-                k=v$k,
-                p=v$p,
-                q=v$q,
-                n=v$n,
-                m=v$m))
+    ),min,out)
     
     tau_o2[tau_o2<0] <- 0
     tau_o2[tau_o2>1] <- 1
     
     o2frame <- data.frame(O2=seq(1,10,l=100),tau_o2 = tau_o2)
     
-    max_tau <- eval_tau_max_temp(level=v$lO,
-                                 O2ref = v$O2ref,
+    O2_tcor <- O2_fact(v$temp,5)
+    f=O2_supply(10*O2_tcor,Topt=v$Topt,O2crit=v$O2crit,Tmax=v$temp[length(v$temp)],T=v$temp,delta=v$lO,omega=1.8,P50=v$P50,n=v$n)
+    
+    max_tau <- eval_tau_max_temp(f=f,
                                  temp=v$temp,
                                  Ea=v$Ea,
-                                 P50 = v$P50,
                                  omega = v$omega,
                                  gamma=v$gamma,
                                  delta=v$delta,
@@ -150,11 +142,11 @@ server = function(input, output) {
                              n=v$n,
                              m=v$m)
     
-    O2_tcor <- O2_fact(v$temp)
-    f=O2_supply(v$O2ref*O2_tcor,level=v$lO,P50=v$P50)
-    
-    scope = f*v$m^v$n-model_frame$metabolism*v$omega
-    
+     
+    #browser()
+    scope <- f*v$m^v$n-model_frame$metabolism*v$omega
+    scope[scope<0.0001] <- 0
+    #browser()
     data.frame(pd,
                o2frame,
                Temperature=v$temp,
@@ -162,8 +154,10 @@ server = function(input, output) {
                tau_t = max_tau,
                tau_lim = tau,
                model_frame,
-               scope=scope,
-               viable = as.numeric(tau_max>0.01 & model_frame$energy>0.01))
+               po2=ifelse(scope<0.0001,0,scope),
+               so2 = f*v$m^v$n,
+               do2 = model_frame$metabolism*v$omega,
+               viable = as.numeric(tau_max>0.0001 & model_frame$energy>0.0001))
     
   })
   
@@ -187,7 +181,7 @@ server = function(input, output) {
     tau_uc[tau_uc<0] <- 0
     tau_uc[tau_uc>1] <- 1
     
-    taus <- get_taus(v,tau_uc,v$O2ref,v$temp_ref)
+    taus <- get_taus(v,tau_uc,10,v$temp_ref)
     
     model_out_par(tau_max = taus$tau_max,
                   tau_uc = tau_uc,
@@ -298,17 +292,19 @@ server = function(input, output) {
     bind_shiny(plot_id = "ggvisTempplot")
   
   plot_data_temp %>%
-    ggvis(x=~Temperature, y=~scope) %>%
-    add_axis("y", title = 'P\u1D0F\u2082') %>%
+    ggvis(x=~Temperature, y=~po2) %>%
+    add_axis("y", title = 'P\u1D0F\u2082 (g/yr)') %>%
     layer_lines()%>%
     layer_points(fill=~viable,stroke=~viable,size:=10,size:=10)%>%
+    layer_lines(x=~Temperature, y=~do2, strokeDash:=6)%>% 
+    layer_lines(x=~Temperature, y=~so2, strokeDash:=2)%>% 
     hide_legend(c("fill","stroke"))%>%
     set_options(height = 300, width = 360)%>%
     bind_shiny(plot_id = "ggvisMetplot")
   
   plot_data_temp %>%
     ggvis(x=~Temperature, y=~feeding) %>%
-    add_axis("y", title = 'Feeding level') %>%
+    add_axis("y", title = 'Feeding level (f)') %>%
     layer_lines()%>%
     layer_points(fill=~viable,stroke=~viable,size:=10)%>%
     hide_legend(c("fill","stroke"))%>%
@@ -317,7 +313,7 @@ server = function(input, output) {
   
   plot_data_temp %>%
     ggvis(x=~Temperature, y=~energy) %>%
-    add_axis("y", title = 'Production') %>%
+    add_axis("y", title = 'Available energy (P_C)') %>%
     layer_lines()%>%
     layer_points(fill=~viable,stroke=~viable,size:=10)%>%
     hide_legend(c("fill","stroke"))%>%
@@ -326,7 +322,7 @@ server = function(input, output) {
   
   plot_data_temp %>%
     ggvis(x=~Temperature, y=~efficiency) %>%
-    add_axis("y", title = 'Efficiency') %>%
+    add_axis("y", title = 'Efficiency (P_C/f)') %>%
     layer_lines()%>%
     layer_points(fill=~viable,stroke=~viable,size:=10)%>%
     hide_legend(c("fill","stroke"))%>%
@@ -335,7 +331,7 @@ server = function(input, output) {
   
   plot_data_temp %>%
     ggvis(x=~Temperature, y=~predation) %>%
-    add_axis("y", title = 'Predation rate') %>%
+    add_axis("y", title = 'Predation rate (f/Θ)') %>%
     layer_lines()%>%
     layer_points(fill=~viable,stroke=~viable,size:=10)%>%
     hide_legend(c("fill","stroke"))%>%
@@ -357,7 +353,7 @@ server = function(input, output) {
     ggvis(x=~O2, y=~Oxygen,stroke:='orange') %>%
     layer_lines()%>%
     layer_lines(x=~O2, y=~Base,stroke:='black')%>%
-    scale_numeric("y",label = 'W\u221E',expand=0)%>%
+    scale_numeric("y",label = 'm\u221E (g)',expand=0)%>%
     set_options(height = 300, width = 300)%>%
     bind_shiny(plot_id = "ggvisOGvis")
   
@@ -365,7 +361,7 @@ server = function(input, output) {
     ggvis(x=~Temperature, y=~Temp,stroke:='green') %>%
     layer_lines()%>%
     layer_lines(x=~Temperature, y=~Base,stroke:='black')%>%
-    scale_numeric("y",label = 'W\u221E',expand=0)%>%
+    scale_numeric("y",label = 'm\u221E (g)',expand=0)%>%
     set_options(height = 300, width = 300)%>%
     bind_shiny(plot_id = "ggvisTGvis")
   

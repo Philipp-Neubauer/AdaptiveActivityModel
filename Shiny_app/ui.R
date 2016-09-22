@@ -23,7 +23,8 @@ JScode <-
 theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
 
 # Define UI for slider demo application
-  ui = dashboardPage(
+  ui = function(request) {
+    dashboardPage(
     
     #  Application title
     header = dashboardHeader(title ="Adaptive acivity model",titleWidth = 420),
@@ -47,9 +48,10 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                conditionalPanel(
                                  condition = "input.variable != 'm'",
                                  tags$head(tags$script(HTML(JScode))),
-                                 sliderInput("m", "Mass", min=1, max=10000, value=100,step = 100,
+                                 sliderInput("m", "Mass", min=1, max=10000, value=1000,step = 100,
                                              animate = animationOptions(interval=200))
                                ),
+                               
                                tabsetPanel(id="tabs",
                                            tabPanel(title = 'Foraging',tabName ='Foraging',
                                                     conditionalPanel(
@@ -90,27 +92,30 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                                                 animate = animationOptions(interval=200))),
                                            tabPanel(title = 'O2',tabName ='O2',
                                                     uiOutput("o2slide"),
-                                                    sliderInput("P50", 'P50', min=1, max=10, value=2,
+                                                    sliderInput("P50", 'P50', min=0, max=10, value=4.2,
                                                                 animate = animationOptions(interval=200)),
-                                                    sliderInput("lO", 'Max O2', min=0.1, max=10, value=5,step=0.2,
+                                                    sliderInput("lO", 'Max O2', min=0.05, max=3, value=1.038,step=0.01,
                                                                 animate = animationOptions(interval=200)),
-                                                    sliderInput("omega", 'O2 consumption', min=0, max=1, value=0.5,
+                                                    sliderInput("O2crit", 'Critical O2', min=0, max=10, value=2,step=0.2,
+                                                                animate = animationOptions(interval=200)),
+                                                    sliderInput("omega", 'O2 consumption', min=0, max=0.01, value=0.003,
                                                                 animate = animationOptions(interval=200))
                                            ),
                                            tabPanel(title = 'Temp',tabName ='Temp',
                                                     sliderInput("Ea", 'Activation energy', min=0, max=1,step = 0.02,
                                                                 value=0.52,animate = animationOptions(interval=200)),
-                                                    sliderInput("O2ref", 'Disolved O2 at Tref', min=1, max=10,step = 0.1,
-                                                                value=8,animate = animationOptions(interval=200)),
-                                                    sliderInput("temp", 'Temp range', min=0, max=32, value=c(1,30),
-                                                                animate = animationOptions(interval=200),dragRange = T)
+                                                    sliderInput("temp", 'Temp range (min to lethal)', min=0, max=32, value=c(1,30),
+                                                                animate = animationOptions(interval=200),dragRange = T),
+                                                    sliderInput("Topt", 'Optimal Temp', min=0, max=32, value=15,
+                                                                animate = animationOptions(interval=200))
                                            ),
                                            tabPanel(title = 'W\u221E',tabName ='Growth',
                                                     sliderInput("r", 'Reproduction allocation', min=0, max=0.6,step = 0.02,
                                                                 value=0.2,animate = animationOptions(interval=200)),
                                                     sliderInput("temp_ref", 'Temperature', min=1, max=32,step = 1,
                                                                 value=20,animate = animationOptions(interval=200))
-                                           ))),
+                                           )),
+                               fluidRow(column(1,bookmarkButton(),offset = 4))),
     # Show a table summarizing the values entered
     dashboardBody(
       #plotOutput("plot"),
@@ -140,6 +145,6 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
              )
       )
     )
-  )
+  )}
   
     
