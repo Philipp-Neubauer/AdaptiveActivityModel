@@ -50,14 +50,14 @@ f_{O_2}&=l(1-e^{O_2\log(0.5)/P50}),\\
 l&=\zeta(\frac{T_{\text{max}}-T}{T_{\text{max}}-T_{\text{opt}}})^\eta \times \exp(-\eta\frac{T_{\text{max}}-T}{T_{\text{max}}-T_{\text{opt}}}),
 \end{align}
 
-with $f_{O_2}$ the oxygen supply (MMR), $T_{\text{max}}$ the lethal temperature for the species, $T_{\text{opt}}$ the temperature at which the MMR is optimised and $\eta$ determines the width of the dome-shape, and $\zeta$ its height.
+with $f_{O_2}$ the oxygen supply (MMR), $T_{\text{max}}$ the lethal temperature for the species, $T_{\text{opt}}$ the temperature at which the MMR is optimised and $\eta$ determines the width of the dome-shape, and $\zeta$ its height (Figure \ref{fig:O2_fig}).
 
 <<echo=FALSE>>=
 library(knitr)
 opts_chunk$set(warning=F, message = FALSE,echo=F,results='asis',error=FALSE,fig.lp='fig:',fig.path='images/')
 @
 
-<<O2_fig,fig.cap='Maximum metabolic rate as a function of temperature', fig.width=8, fig.height=4, echo=FALSE, out.width='\\linewidth'>>=
+<<O2_fig,fig.cap='Maximum metabolic rate as a function of temperature, for three different optimal temperatures (panels---see panel label for optimal temperature in degrees celsius), and increasing values of $\\eta$.', fig.width=8, fig.height=4, echo=FALSE, out.width='\\linewidth'>>=
 
 grid <- expand.grid(eta = c(0.5,2,5),
                     Topt = c(10,15,20))
