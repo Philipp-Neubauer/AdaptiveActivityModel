@@ -26,7 +26,7 @@ $(TARGET): $(OUTPUT_DIR)/$(TARGET)
 	cp $(OUTPUT_DIR)/$(TARGET) $(TARGET)
 
 $(OUTPUT_DIR)/$(TARGET): $(TARGET:%.pdf=%.tex) $(OUTPUT_DIR) $(KNITR_BASE) #$(KNITR_BASE)
-	(TEXINPUTS=.///: xelatex -output-directory=$(OUTPUT_DIR) $<) #&& (TEXINPUTS=.///: biber --output_directory=$(OUTPUT_DIR) $(<:%.tex=%)) && (TEXINPUTS=.///: xelatex -output-directory=$(OUTPUT_DIR) $<) && (TEXINPUTS=.///: xelatex -output-directory=$(OUTPUT_DIR) $<) 
+	(TEXINPUTS=.///: xelatex -output-directory=$(OUTPUT_DIR) $<) && (TEXINPUTS=.///: biber --output_directory=$(OUTPUT_DIR) $(<:%.tex=%)) && (TEXINPUTS=.///: xelatex -output-directory=$(OUTPUT_DIR) $<) && (TEXINPUTS=.///: xelatex -output-directory=$(OUTPUT_DIR) $<) 
 $(OUTPUT_DIR):
 	$(DOC) mkdir -p $(OUTPUT_DIR)
 
