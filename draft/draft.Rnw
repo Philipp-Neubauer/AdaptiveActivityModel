@@ -2,6 +2,8 @@
 \usepackage{amsmath}
 \usepackage{caption} 
 \usepackage{array} 
+\usepackage[style=authoryear,backend=biber]{biblatex}
+\addbibresource{model.bib}
 \captionsetup[table]{singlelinecheck=false}
 
 \title{Interactive effects of oxygen and temperature on ectotherms}
@@ -39,11 +41,9 @@ P_{0_2} &= S_{O_2} - D_{O_2} \\
 
 where $f$ is the feeding level ([0,1]), determined by the fraction of time spent foraging (or proportion of maximum attack rate) $\tau$, consumption rate $\gamma w^p \Theta$ (search rate $\gamma w^p$ times prey avalibility $\Theta$) and maximum consumption $h w^q$. In the following, we will refer to $\tau$ as the activity fraction for sake of generality. Maximum consumption, being determined by digestive (enzymatic) processes, is assumed to scale with temperature as $c_T = e^{E_a(T-T_0)/kTT_0}$. Available carbon $P_C$ is determined by supply ($S_C$) from prey consumption ($f_C h c_T w^q$), with $\beta \approx 0.15$ a loss due to specific dynamic action (SDA, or heat increment; the energy spent absorbing food), and $\phi \approx 0.25$ is the fraction of food excreted and egested. Metabolic costs ($D_C$) are those of standard metabolism ($k w^n$), as well as active metabolism (scaled in units of standard metabolsim as $\delta k w^n$), with the activity fraction $\tau$ determining the fraction of time that the active metabolism cost applies.  
 
-
-
 The oxygen budget determines the metabolic scope $S_{0_2}$. Metabolic scope is the difference between oxygen supply $S_{O_2}/w^n=f_{O_2}$, the amount of oxgygen supplied per unit weight, and oxygen demand. Demand ($D_{O_2}$) is the sum of oxygen used for SDA ($\beta f_C h c_T w^q$) and catabolism ($[1+\tau \delta] c_T k w^n$), with $\omega$ determining amount of oxygen required per unit of metabolised carbon (note: oxygen is measured in the same units as the carbon. To find the actual amount of oxygen used multiply by the amount of oxygen used to respire one unit of carbon). 
 
-The maximum oxygen consumption---usually called the maximum metabolic rate (MMR), or active metbolic rate---is the oxygen consumption during maximal activity level that can be sustained over some time. This level is determined by oxygen delivery to organs and muscles. At constant temperature, oxygen supply as a function of ambient oxygen is assumed, in line with experimental evidence, to follow a saturating function. We specify $P_{50}$ as the point where the MMR (or oxygen supply) has dropped by 50\% relative to the saturation level $l$ \footnote{Could also use the same functional form as the consumption of food for simplicity: $f_{O_2} = \Gamma \Theta_{O_2}/\Gamma \Theta_{O_2} + h_{O_2} = \Theta_{O_2}/(\Theta_{O_2} + P_{50}).$}. Oxygen supply, and hence the MMR, are usually found to be temperature dependant (CITE), with a peak in MMR at an optimal temperature. We follow Lefrancois \& Claireaux (2003) and Strasbaka \& Gnauck (1985) and use a dome shaped function that peaks at the otpimal temperature. Thus:
+The maximum oxygen consumption---usually called the maximum metabolic rate (MMR), or active metbolic rate---is the oxygen consumption during maximal activity level that can be sustained over some time. This level is determined by oxygen delivery to organs and muscles. At constant temperature, oxygen supply as a function of ambient oxygen is assumed, in line with experimental evidence, to follow a saturating function. We specify $P_{50}$ as the point where the MMR (or oxygen supply) has dropped by 50\% relative to the saturation level $l$ \footnote{Could also use the same functional form as the consumption of food for simplicity: $f_{O_2} = \Gamma \Theta_{O_2}/\Gamma \Theta_{O_2} + h_{O_2} = \Theta_{O_2}/(\Theta_{O_2} + P_{50}).$}. Oxygen supply, and hence the MMR, are usually found to be temperature dependant (CITE), with a peak in MMR at an optimal temperature. We follow \cite{gnauck2013freshwater, lefrancois_influence_2003} and use a dome shaped function that peaks at the otpimal temperature. Thus:
 
 \begin{align}
 f_{O_2}&=l(1-e^{O_2\log(0.5)/P50}),\\
@@ -128,5 +128,18 @@ Exponent for std.~metabolism & $n=0.75$ \\
 \end{tabular}
 \end{table}
 
+\subsection{Food web aspects of the model}
 
+I n our model we assume that species regulate their acitivty level $\tau$ to optimise available energy for growth and reproduction. This concept aligns with the foraging arena concept that is often employed in food web models. In foraging arena theory, fish transition between vunerable states (the foraging arena) and states of lesser vulnerability. The model poutlined above does not yet consider that the optimisation of $\tau$ involves aspects of vulnerability associated with the foraging activity: the cost of foraging in the model above is purely metabolic. This is clearly not very realsitic - optimisation of energy intake needs to be balanced against predation risk.
+
+Predation risk at size can be derived by considering individuals of size $w$ in the context of a size-spectrum that models the abundance of individuals and species as a function of their wight (\cite{andersen_how_2009}). Given a size spectrum with slope $\lambda$, and assuming that all prey sizes are equally available to predation, predation mortality can be shown to be:
+
+\begin{align}
+\mu(w) &= h_p \Phi w^{n-1},\\
+\Phi &= f(\lambda,\eta(w,w_p))
+\end{align}
+
+where $h_p$, the predator maximum consumption, determines the predation pressure, and $\Phi$ is a constant that is dependent on slope of the size-spectrum $\lambda$ and the predator prey size selection function $\eta(w,w_p)$. Since our focus here is on natural mortality from predation experienced at size w (the impact of mortality on prey of size w), we will ignore here the effect of temperature on predators (via modulation of $h_p$), and only focus at a more abstract level on the effect of different levels of predation pressure.
+
+\printbibliography 
 \end{document}
