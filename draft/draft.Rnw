@@ -139,7 +139,7 @@ Predation risk at size can be derived by considering individuals of size $w$ in 
 \Phi &= f(\lambda,\eta(w,w_p))
 \end{align}
 
-where $h_p$, the predator maximum consumption, determines the predation pressure, and $\Phi$ is a constant that is dependent on slope of the size-spectrum $\lambda$ and the predator prey size selection function $\eta(w,w_p)$. Since our focus here is on natural mortality from predation experienced at size w (the impact of mortality on prey of size w), we will ignore here the effect of temperature on predators (via modulation of $h_p$), and only focus at a more abstract level on the effect of different levels of predation pressure.
+where $h_p$, the predator maximum consumption, determines the predation pressure, and $\Phi$ is a constant that is dependent on slope of the size-spectrum $\lambda$ and the predator prey size selection function $\eta(w,w_p)$. Since our focus here is on natural mortality from predation experienced at size w (the impact of mortality on prey of size w), we will ignore here the effect of temperature on predators (via modulation of $h_p$), and only focus at a more abstract level on the effect of different levels of predation pressure. In our model, only a fraction $\tau$ of the prey population is in the vulnerable state. [WHT DOES THIS MEAN FOR $\mu$ - it should be dependent on $\tau$ of other prey and the predator....yayx.]
 
 \printbibliography 
 \end{document}
