@@ -27,7 +27,7 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
     dashboardPage(
     
     #  Application title
-    header = dashboardHeader(title ="Adaptive acivity model",titleWidth = 420),
+    header = dashboardHeader(title ="Adaptive activity model",titleWidth = 420),
     
     # Sidebar with sliders that demonstrate various available options
     sidebar = dashboardSidebar(width = 420,
@@ -56,7 +56,7 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                            tabPanel(title = 'Foraging',tabName ='Foraging',
                                                     conditionalPanel(
                                                       condition = "input.variable != 'gamma'",
-                                                      sliderInput("gamma", 'Consumtion rate', min=1, max=100, value=40,
+                                                      sliderInput("gamma", 'Consumption rate', min=1, max=100, value=40,
                                                                   animate = animationOptions(interval=200))
                                                     ),
                                                     conditionalPanel(
@@ -64,7 +64,7 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                                       sliderInput("h", 'Maximum ingestion', min=1, max=100, value=20,
                                                                   animate = animationOptions(interval=200))
                                                     ),
-                                                    sliderInput("p", 'Consumtion rate scaling', min=0.5, max=1, value=0.8,
+                                                    sliderInput("p", 'Consumption rate scaling', min=0.5, max=1, value=0.8,
                                                                 animate = animationOptions(interval=200)),
                                                     sliderInput("q", 'Maximum intake scaling', min=0.5, max=1, value=0.75,
                                                                 animate = animationOptions(interval=200))),
