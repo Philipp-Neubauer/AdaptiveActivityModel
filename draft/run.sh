@@ -2,7 +2,7 @@
 
 set -ex
 
-docker build -t docker.dragonfly.co.nz/squid-butterfish .
+docker build -t docker.dragonfly.co.nz/adaptive_activity .
 
 docker run --rm  -v $PWD:/work -w /work \
-  docker.dragonfly.co.nz/squid-butterfish ./build.sh
+  docker.dragonfly.co.nz/adaptive_activity ./build.sh

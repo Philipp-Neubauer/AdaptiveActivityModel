@@ -1,0 +1,65 @@
+#+BEGIN_SRC  sage :session Sage
+print 'This code will be evaluated in the process buffer *Sage*.'
+#+END_SRC
+
+#+RESULTS:
+: This code will be evaluated in the process buffer *Sage*.
+
+#+BEGIN_SRC  sage :session Sage
+var('phi, b, tau, h, T, w, q,f, p, n,g,E,d,k,e,o,O,c')
+#+END_SRC
+
+#+RESULTS:
+: (phi, b, tau, h, T, w, q, f, p, n, g, E, d, k, e, o, O, c)
+
+#+BEGIN_SRC  sage :session Sage
+diff((1-b-phi)*(a/(a+(h*T*w^(q-p)/(g*E))))*h*T*w^q-(1+a*d)*T*k*w^n, a)
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC  sage :session Sage
+solve(0==-T*d*k*w^n - T*(b + phi - 1)*h*w^q/(a + T*h*w^(-p +
+q)/(E*g)) + T*a*(b + phi - 1)*h*w^q/(a + T*h*w^(-p + q)/(E*g))^2,a)
+#+END_SRC
+
+#+RESULTS:
+: [a == -(T*d*h*k*w^(n - p + q) + sqrt(-((b - 1)*d*g*k + d*g*k*phi)*E*T*w^(n - p + 2*q))*h)/(E*d*g*k*w^n), a == -(T*d*h*k*w^(n - p + q) - sqrt(-((b - 1)*d*g*k + d*g*k*phi)*E*T*w^(n - p + 2*q))*h)/(E*d*g*k*w^n)]
+
+#+BEGIN_SRC  sage :session Sage
+solve(0==O*w^n - o*(b*(tau/(tau+(h*c*w(q-p)/(g*phi))))*h*c*w^q +(1+tau *d)*c* k*w^n),tau)
+#+END_SRC
+
+#+RESULTS:
+: [tau == -1/2*(O*g*phi*w^n - ((c^2*d*e - c^2*d)*h*k*o*p - (c*e - c)*g*k*o*phi - (c^2*d*e - c^2*d)*h*k*o*q)*w^n + (c*e*g*h*o*phi^2 + ((b - 1)*c*e - b*c)*g*h*o*phi)*w^q + sqrt(O^2*g^2*phi^2*w^(2*n) + 2*(((c^2*d*e - c^2*d)*g*h*k*o*p*phi + (c*e - c)*g^2*k*o*phi^2 - (c^2*d*e - c^2*d)*g*h*k*o*phi*q)*w^(2*n) + (c*e*g^2*h*o*phi^3 + ((b - 1)*c*e - b*c)*g^2*h*o*phi^2)*w^(n + q))*O + ((c^4*d^2*e^2 - 2*c^4*d^2*e + c^4*d^2)*h^2*k^2*o^2*p^2 + 2*(c^3*d*e^2 - 2*c^3*d*e + c^3*d)*g*h*k^2*o^2*p*phi + (c^2*e^2 - 2*c^2*e + c^2)*g^2*k^2*o^2*phi^2 + (c^4*d^2*e^2 - 2*c^4*d^2*e + c^4*d^2)*h^2*k^2*o^2*q^2 - 2*((c^4*d^2*e^2 - 2*c^4*d^2*e + c^4*d^2)*h^2*k^2*o^2*p + (c^3*d*e^2 - 2*c^3*d*e + c^3*d)*g*h*k^2*o^2*phi)*q)*w^(2*n) + 2*((c^2*e^2 - c^2*e)*g^2*h*k*o^2*phi^3 - ((b - 1)*c^3*d*e^2 - (2*b - 1)*c^3*d*e + b*c^3*d)*g*h^2*k*o^2*p*phi - ((c^3*d*e^2 - c^3*d*e)*g*h^2*k*o^2*p - ((b - 1)*c^2*e^2 - (2*b - 1)*c^2*e + b*c^2)*g^2*h*k*o^2)*phi^2 + ((c^3*d*e^2 - c^3*d*e)*g*h^2*k*o^2*phi^2 + ((b - 1)*c^3*d*e^2 - (2*b - 1)*c^3*d*e + b*c^3*d)*g*h^2*k*o^2*phi)*q)*w^(n + q) + (c^2*e^2*g^2*h^2*o^2*phi^4 + 2*((b - 1)*c^2*e^2 - b*c^2*e)*g^2*h^2*o^2*phi^3 + ((b^2 - 2*b + 1)*c^2*e^2 + b^2*c^2 - 2*(b^2 - b)*c^2*e)*g^2*h^2*o^2*phi^2)*w^(2*q)))/((c*d*e - c*d)*g*k*o*phi*w^n), tau == -1/2*(O*g*phi*w^n - ((c^2*d*e - c^2*d)*h*k*o*p - (c*e - c)*g*k*o*phi - (c^2*d*e - c^2*d)*h*k*o*q)*w^n + (c*e*g*h*o*phi^2 + ((b - 1)*c*e - b*c)*g*h*o*phi)*w^q - sqrt(O^2*g^2*phi^2*w^(2*n) + 2*(((c^2*d*e - c^2*d)*g*h*k*o*p*phi + (c*e - c)*g^2*k*o*phi^2 - (c^2*d*e - c^2*d)*g*h*k*o*phi*q)*w^(2*n) + (c*e*g^2*h*o*phi^3 + ((b - 1)*c*e - b*c)*g^2*h*o*phi^2)*w^(n + q))*O + ((c^4*d^2*e^2 - 2*c^4*d^2*e + c^4*d^2)*h^2*k^2*o^2*p^2 + 2*(c^3*d*e^2 - 2*c^3*d*e + c^3*d)*g*h*k^2*o^2*p*phi + (c^2*e^2 - 2*c^2*e + c^2)*g^2*k^2*o^2*phi^2 + (c^4*d^2*e^2 - 2*c^4*d^2*e + c^4*d^2)*h^2*k^2*o^2*q^2 - 2*((c^4*d^2*e^2 - 2*c^4*d^2*e + c^4*d^2)*h^2*k^2*o^2*p + (c^3*d*e^2 - 2*c^3*d*e + c^3*d)*g*h*k^2*o^2*phi)*q)*w^(2*n) + 2*((c^2*e^2 - c^2*e)*g^2*h*k*o^2*phi^3 - ((b - 1)*c^3*d*e^2 - (2*b - 1)*c^3*d*e + b*c^3*d)*g*h^2*k*o^2*p*phi - ((c^3*d*e^2 - c^3*d*e)*g*h^2*k*o^2*p - ((b - 1)*c^2*e^2 - (2*b - 1)*c^2*e + b*c^2)*g^2*h*k*o^2)*phi^2 + ((c^3*d*e^2 - c^3*d*e)*g*h^2*k*o^2*phi^2 + ((b - 1)*c^3*d*e^2 - (2*b - 1)*c^3*d*e + b*c^3*d)*g*h^2*k*o^2*phi)*q)*w^(n + q) + (c^2*e^2*g^2*h^2*o^2*phi^4 + 2*((b - 1)*c^2*e^2 - b*c^2*e)*g^2*h^2*o^2*phi^3 + ((b^2 - 2*b + 1)*c^2*e^2 + b^2*c^2 - 2*(b^2 - b)*c^2*e)*g^2*h^2*o^2*phi^2)*w^(2*q)))/((c*d*e - c*d)*g*k*o*phi*w^n)]
+
+#+BEGIN_SRC  sage :session Sage
+var('R, t, h, T, w, q, p, n,g,E,d,k,tau0')
+tau = function('tau', t)
+de = diff(tau,t) - k*tau*(1-tau)*T
+h = desolve(de, tau, ivar=t,ics=[0,tau0])
+h
+#+END_SRC
+
+#+RESULTS:
+: (R, t, h, T, w, q, p, n, g, E, d, k, tau0)
+: -(log(tau(t) - 1) - log(tau(t)))/(T*k) == (T*k*t - log(tau0 - 1) + log(tau0))/(T*k)
+
+#+BEGIN_SRC  sage :session Sage
+var('tau, _C, tk')
+solve(-(log((tau - 1)/tau)) == tk*_C + tk*t,tau)
+solve(-(log((tau - 1)/tau)) == (tk*t - log(tau0 - 1) + log(tau0)),tau)
+#+END_SRC
+
+#+RESULTS:
+: (tau, _C, tk)
+: [tau == -1/(e^(-_C*tk - t*tk) - 1)]
+: [tau == tau0*e^(t*tk)/(tau0*e^(t*tk) - tau0 + 1)]
+
+#+BEGIN_SRC  sage :session Sage
+simplify(log(tau0*e^(t*tk)/(tau0*e^(t*tk) - tau0 + 1))
+#+END_SRC
+
+#+RESULTS:
+: log(tau0*e^(t*tk)/(tau0*e^(t*tk) - tau0 + 1))
+
