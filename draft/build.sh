@@ -3,6 +3,6 @@
 set -ex
 
 #Rscript -e 'install.packages("purrr",repo="http://cloud.r-project.org/")'
-make 
+make -B
 
 cp draft.pdf /output/
