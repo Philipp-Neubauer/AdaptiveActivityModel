@@ -8,8 +8,8 @@ DOC := $(if $(HASDOCKER), docker run --net host --rm -v $$PWD:/work -w /work doc
 OUTPUT_DIR=build
 TARGET=draft.pdf
 
-KNITR = $(addsuffix .tex, $(basename $(shell find . -iname "*.Rnw")))
-KNITR_BASE = $(addprefix $(OUTPUT_DIR)/, $(addsuffix .tex, $(basename $(wildcard *.Rnw))))
+#KNITR = $(addsuffix .tex, $(basename $(shell find . -iname "*.Rnw")))
+#KNITR_BASE = $(addprefix $(OUTPUT_DIR)/, $(addsuffix .tex, $(basename $(wildcard *.Rnw))))
 KNIT_COMMAND = library(knitr);opts_chunk\$$set(warning=F, message = FALSE,echo=T,results='asis',error=FALSE,fig.lp='fig:',fig.path='images/');
 
 ####################################################
@@ -32,6 +32,10 @@ $(OUTPUT_DIR):
 
 $(OUTPUT_DIR)/%.tex: %.Rnw $(KNITR)
 	$(DOC) Rscript --vanilla -e "$(KNIT_COMMAND) knit('$(<F)',output='$(OUTPUT_DIR)/$(@F)')"
+
+%.tex: %.Rnw $(KNITR)
+	$(DOC) Rscript --vanilla -e "$(KNIT_COMMAND) knit('$(<F)',output='$(@F)')"
+
 
 #knitr/%_tab.tex: knitr/%_tab.rnw 
 #	$(DOC) Rscript --vanilla -e "$(KNIT_COMMAND) knit('$(@D)/$(<F)', output = '$(@D)/$(@F)')"
