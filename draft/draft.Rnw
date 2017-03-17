@@ -6,7 +6,7 @@
 \addbibresource{model.bib}
 \captionsetup[table]{singlelinecheck=false}
 
-\title{Interactive effects of oxygen and temperature on ectotherms}
+\title{Modeling physiological responses to changing temperature in marine ecosystems}
 \author{Philipp Neubauer \and Ken H. Andersen}
 
 \begin{document}
@@ -20,6 +20,8 @@ Climate change in adapting ecosystems:
 
 QUESTIONS:
 \begin{itemize}
+\item When do warming temepratures lead to changes in size?
+\item Ecological responses of temperature driven by adaptive response to metabolic needs
 \item Size-structure and adaptive foraging stabilise food-webs: is stability compromised by climate change? Does adaptive activity dampen effect of climate change?
 \item How large are indirect effects relative to direct effects?
 \item Are more even food-webs more resilient than food-webs with dominant species?
@@ -127,14 +129,14 @@ Exponent for std.~metabolism & $n=0.75$ \\
 
 In our model we assume that species regulate their activty level $\tau$ to optimise available energy for growth and reproduction. This concept aligns with the foraging arena concept that is often employed in food web models. In foraging arena theory, fish transition between vulnerable states (the foraging arena) and states of lesser vulnerability. The model outlined above does not yet consider that the optimisation of $\tau$ involves aspects of vulnerability associated with the foraging activity: the cost of foraging in the model above is purely metabolic. This is clearly not very realistic - optimisation of energy intake needs to be balanced against predation risk.
 
-Predation risk at size can be derived by considering individuals of size $w$ in the context of a size-spectrum that models the abundance of individuals and species as a function of their wight (\cite{andersen_how_2009}). Given a size spectrum with slope $\lambda$, and assuming that all prey sizes are equally available to predation, predation mortality can be shown to be:
+Predation risk at size can be derived by considering individuals of size $w$ in the context of a size-spectrum that models the abundance of individuals and species as a function of their weight (\cite{andersen_how_2009}). Given a size spectrum with slope $\lambda$, and assuming that all prey sizes are equally available to predation (i.e., $\tau = 1$ for all species and weights), predation mortality can be shown to be:
 
 \begin{align}
 \mu &= f_p \Phi w^{n-1},\\
 \Phi &= f(\lambda,\eta(w,w_p))
 \end{align}
 
-where $f_p$, the predator feeding level, determines the predation pressure, and $\Phi$ is a constant that is dependent on slope of the size-spectrum $\lambda$ and the predator prey size selection function $\eta(w,w_p)$. We can assume that instead of optimising available energy, available energy is traded-off against predation risk, such that individuals adjust $\tau$ so as to optimise $F = P_C/\mu$. While conceptually straightforward, the adaptive activity now involves the predator feeding level which, according to equation \ref{eq:f}, is itself dependent on available prey. If we assume that prey are less vulnerable (or unavailable) when not feeding, then the predator feeding level depends on available prey through both prey abundance and $\tau_{prey}$. Thus, in the food-web context, the activity level (and availability) of each individual depends on the activity level and abundance of both their prey and predator - a phenomenon which creates indirect connections between the dynamics of all size-classes and species in the ecosystem (CITE Abrams 1992). 
+where $f_p$, the predator feeding level, determines the predation pressure, and $\Phi$ is a constant that is dependent on slope of the size-spectrum $\lambda$ and the predator prey size selection function $\eta(w,w_p)$. We can assume that instead of optimising available energy, available energy is traded-off against predation risk, such that individuals of species $i$ and weight $w$ adjust $\tau_{i,w}$ so as to optimise $F_{i,w} = P_C_{i,w}/\mu_{i,w}$. While conceptually straightforward, the adaptive activity now involves the predator feeding level which, according to equation \ref{eq:f}, is itself dependent on available prey. If we assume that prey are less vulnerable (or unavailable) when not feeding, then the predator feeding level depends on available prey through both prey abundance and $\tau_{prey}$. Thus, in the food-web context, the activity level (and availability) of each individual depends on the activity level and abundance of both their prey and predator - a phenomenon which creates indirect connections between the dynamics of all size-classes and species in the ecosystem (CITE Abrams 1992). 
 
 To accommodate this complexity, we assume that optimisation in the ecosystem context is not instantaneous, but has some associated time-scale, and that the activity level adapts faster when the current behaviour is less optimal. This can be represented using a model for adaptive behaviour (CITE Matsuda et al 1996):
 
