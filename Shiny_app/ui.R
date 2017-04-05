@@ -113,7 +113,9 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                                     sliderInput("r", 'Reproduction allocation', min=0, max=0.6,step = 0.02,
                                                                 value=0.2,animate = animationOptions(interval=200)),
                                                     sliderInput("temp_ref", 'Temperature', min=1, max=32,step = 1,
-                                                                value=20,animate = animationOptions(interval=200))
+                                                                value=20,animate = animationOptions(interval=200)),
+                                                    sliderInput("M", 'M', min=0.01, max=1,step = 0.01,
+                                                                value=0.2,animate = animationOptions(interval=200))
                                            )),
                                fluidRow(column(1,bookmarkButton(),offset = 4))),
     # Show a table summarizing the values entered

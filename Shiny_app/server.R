@@ -28,7 +28,8 @@ server = function(input, output, session) {
            Topt=input$Topt,
            O2crit=input$O2crit,
            r=input$r,
-           temp_ref=input$temp_ref)
+           temp_ref=input$temp_ref,
+           M=input$M)
     
     #browser()
     if(nchar(input$min)>0 && nchar(input$max)>0){
@@ -187,6 +188,7 @@ server = function(input, output, session) {
                   tau_uc = tau_uc,
                   tau_o2 = taus$tau_o2,
                   r=v$r,
+                  M=v$M,
                   temp=v$temp_ref,
                   Ea=v$Ea,
                   gamma=v$gamma,
@@ -231,11 +233,12 @@ server = function(input, output, session) {
     
     for (i in 1:n_int){
       taus <- get_taus(v,tau_uc,winfs[i,1],winfs[i,2])
-      
+      #browser()
       winfs[i,3:5] <- model_out_par(tau_max = taus$tau_max,
                                     tau_uc = tau_uc,
                                     tau_o2 = taus$tau_o2,
                                     r=v$r,
+                                    M=v$M,
                                     temp=winfs[i,2],
                                     Ea=v$Ea,
                                     gamma=v$gamma,
@@ -339,14 +342,17 @@ server = function(input, output, session) {
     bind_shiny(plot_id = "ggvispredplot")
   
   plot_data_growth %>%
-    ggvis(x=~m, y=~Carbon,shape=~Term,stroke=~Limitation,fill=~Limitation) %>%
-    layer_points(size:=10)%>% 
+    ggvis(x=~m, y=~Carbon,strokeDash=~Term,stroke=~Limitation) %>%
     scale_numeric("x", trans="log",expand=0)%>%
     scale_numeric("y", trans="log",expand=0)%>%
     add_axis("y", grid=F) %>%
     add_axis("x", grid=F) %>%
+    group_by(Limitation,Term) %>% 
+    layer_paths()%>% 
     set_options(height = 300, width = 720)%>%
-    add_legend(scales = "shape", properties = legend_props(legend = list(y = 100))) %>%
+    #scale_nominal("stroke",label='Limitation') %>%
+    #scale_nominal("strokeDash",label='Term') %>%
+    add_legend(scales = c("stroke","strokeDash")) %>%
     bind_shiny(plot_id = "ggvisGvis")
   
   plot_data_growth_tO2 %>%

@@ -20,7 +20,7 @@ Climate change in adapting ecosystems:
 
 QUESTIONS:
 \begin{itemize}
-\item When do warming temepratures lead to changes in size?
+\item When do warming temperatures lead to changes in size?
 \item Ecological responses of temperature driven by adaptive response to metabolic needs
 \item Size-structure and adaptive foraging stabilise food-webs: is stability compromised by climate change? Does adaptive activity dampen effect of climate change?
 \item How large are indirect effects relative to direct effects?

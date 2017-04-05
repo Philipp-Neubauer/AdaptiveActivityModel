@@ -72,8 +72,8 @@ eval_tau_eq <- function(gamma=50,
                         n=0.8,
                         m=100){
   
-  (m^(-n-2*p)*(gamma*(-h)*delta*k*m^(n+p+q)+sqrt((1-beta-phi)*gamma^3*h^2*delta*k*m^(n+3*p+2*q))))/(gamma^2*delta*k)
-  
+  #(m^(-n-2*p)*(gamma*(-h)*delta*k*m^(n+p+q)+sqrt((1-beta-phi)*gamma^3*h^2*delta*k*m^(n+3*p+2*q))))/(gamma^2*delta*k)
+  -(h*k*m^(n - p + q) + sqrt(-(beta - 1)*h*k*m^(n - 2*p + 3*q) - h*k*m^(n - 2*p + 3*q)*phi)*h)/((beta - 1)*gamma*h*m^q + gamma*h*m^q*phi + gamma*k*m^n)
 }
 
 eval_tau_eq_temp <- function(Ea,
@@ -91,7 +91,9 @@ eval_tau_eq_temp <- function(Ea,
   
   tc = exp(Ea*((temp+273.2)-288.2)/(8.6173324*10^(-5)*(temp+273.2)*288.2))
   
-  (m^(-n-2*p)*(gamma*(-h)*tc*delta*k*m^(n+p+q)+(sqrt(gamma^3*delta*k*tc*h^2*m^(n+3*p+2*q)*(1-beta-phi)))))/(gamma^2*delta*k)
+  #(m^(-n-2*p)*(gamma*(-h)*tc*delta*k*m^(n+p+q)+(sqrt(gamma^3*delta*k*tc*h^2*m^(n+3*p+2*q)*(1-beta-phi)))))/(gamma^2*delta*k)
+  #browser()
+  -(h*k*m^(n - p + q)*tc + sqrt(-(beta - 1)*h*k*m^(n - 2*p + 3*q) - h*k*m^(n - 2*p + 3*q)*phi)*h*tc)/((beta - 1)*gamma*h*m^q + gamma*h*m^q*phi + gamma*k*m^n)
   
 }
 
@@ -137,6 +139,7 @@ model_out_par <- function(tau_max,
                           temp,
                           Ea,
                           r=0.2,
+                          M=0.2,
                           gamma=50,
                           delta=2,
                           phi=0.15,
@@ -151,21 +154,29 @@ model_out_par <- function(tau_max,
   
   #browser()
   tc = exp(Ea*((temp+273.2)-288.2)/(8.6173324*10^(-5)*(temp+273.2)*288.2))
+  #browser()
+  get_dPdm <- function(tau,tcc) -(beta + phi - 1)*h^2*m^(-p + q - 1)*m^q*(p - q)*tau*tcc^2/((h*m^(-p + q)*tcc/gamma + tau)^2*gamma) - (delta*tau + 1)*k*m^(n - 1)*n*tcc - (beta + phi - 1)*h*m^(q - 1)*q*tau*tcc/(h*m^(-p + q)*tcc/gamma + tau)
   
   f <- tau_max*gamma*m^p/(tau_max*gamma*m^p+tc*h*m^q)
   inp <- (1-phi-beta)*f*tc*h*m^q
   out <- (1+tau_max*delta)*k*tc*m^n + r*m
-  winf <- min(m[out>inp],max(m))
+  
+  mm <- get_dPdm(tau_max,tcc=tc)
+  winf <- min(m[M>mm],max(m))
   
   f <- tau_uc*gamma*m^p/(tau_uc*gamma*m^p+h*m^q)
   inp_uc <- (1-phi-beta)*f*h*m^q
   out_uc <- (1+tau_uc*delta)*k*m^n+ r*m
-  winf_uc <- min(m[out_uc>inp_uc],max(m))
+  
+  mm_uc <- get_dPdm(tau_uc,tcc=1)
+  winf_uc <- min(m[M>mm_uc],max(m))
   
   f <- tau_o2*gamma*m^p/(tau_o2*gamma*m^p+h*m^q)
   inp_o2 <- (1-phi-beta)*f*h*m^q
   out_o2 <- (1+tau_o2*delta)*k*m^n+ r*m
-  winf_o2 <- min(m[out_o2>inp_o2],max(m))
+  
+  mm_o2 <- get_dPdm(tau_o2,tc=1)
+  winf_o2 <- min(m[M>mm_o2],max(m))
   
   winf <- c(winf,winf_o2,winf_uc)
   winf_range <- range(winf)
