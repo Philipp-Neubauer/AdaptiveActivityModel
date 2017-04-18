@@ -25,11 +25,11 @@ server = function(input, output, session) {
            omega=input$omega,
            Ea=input$Ea,
            temp=seq(input$temp[1],input$temp[2],l=100),
+           temp_ref=input$Tref,
            Topt=input$Topt,
            O2crit=input$O2crit,
-           r=input$r,
-           temp_ref=input$temp_ref,
-           M=input$M)
+           M=input$M,
+           v=input$v)
     
     #browser()
     if(nchar(input$min)>0 && nchar(input$max)>0){
@@ -64,7 +64,9 @@ server = function(input, output, session) {
                       p=v$p,
                       q=v$q,
                       n=v$n,
-                      m=v$m)
+                      m=v$m,
+                      M=v$M,
+                      v=v$v)
     
     pd <- data.frame(rep(0,100))
     colnames(pd) <- input$variable
@@ -123,7 +125,9 @@ server = function(input, output, session) {
                             p=v$p,
                             q=v$q,
                             n=v$n,
-                            m=v$m)
+                            m=v$m,
+                            M=v$M,
+                            v=v$v)
     
     tau_max = apply(cbind(tau,max_tau),1,min)
     tau_max[tau_max<0] <- 0
@@ -148,11 +152,13 @@ server = function(input, output, session) {
     scope <- f*v$m^v$n-model_frame$metabolism*v$omega
     scope[scope<0.0001] <- 0
     #browser()
+    
     data.frame(pd,
                o2frame,
                Temperature=v$temp,
                tau_temp = tau_max,
                tau_t = max_tau,
+               M = tau^v$v*v$M*v$m^(v$n-1),
                tau_lim = tau,
                model_frame,
                po2=ifelse(scope<0.0001,0,scope),
@@ -164,10 +170,10 @@ server = function(input, output, session) {
   
   
   plot_data_growth <- reactive({
-    
+
     v = values()
     v[[input$variable]] <- ifelse(is.null(input$o2slide),5,input$o2slide)
-    
+
     tau_uc = eval_tau_eq(gamma=v$gamma,
                          delta=v$delta,
                          phi=v$phi,
@@ -177,17 +183,19 @@ server = function(input, output, session) {
                          p=v$p,
                          q=v$q,
                          n=v$n,
-                         m=10^seq(1,5,l=10000))
-    
+                         m=10^seq(1,5,l=1000),
+                         M=v$M,
+                         v=v$v)
+
     tau_uc[tau_uc<0] <- 0
     tau_uc[tau_uc>1] <- 1
-    
+
     taus <- get_taus(v,tau_uc,10,v$temp_ref)
-    
+
     model_out_par(tau_max = taus$tau_max,
+                  tau = taus$tau,
                   tau_uc = tau_uc,
                   tau_o2 = taus$tau_o2,
-                  r=v$r,
                   M=v$M,
                   temp=v$temp_ref,
                   Ea=v$Ea,
@@ -200,10 +208,10 @@ server = function(input, output, session) {
                   p=v$p,
                   q=v$q,
                   n=v$n,
-                  m = 10^seq(1,5,l=10000)
+                  m = 10^seq(1,5,l=1000)
     )
   })
-  
+
   
   plot_data_growth_tO2 <- reactive({
     
@@ -219,7 +227,9 @@ server = function(input, output, session) {
                          p=v$p,
                          q=v$q,
                          n=v$n,
-                         m=10^seq(1,5,l=10000))
+                         m=10^seq(1,5,l=1000),
+                         M=v$M,
+                         v=v$v)
     
     tau_uc[tau_uc<0] <- 0
     tau_uc[tau_uc>1] <- 1
@@ -235,10 +245,11 @@ server = function(input, output, session) {
       taus <- get_taus(v,tau_uc,winfs[i,1],winfs[i,2])
       #browser()
       winfs[i,3:5] <- model_out_par(tau_max = taus$tau_max,
+                                    tau = taus$tau,
                                     tau_uc = tau_uc,
                                     tau_o2 = taus$tau_o2,
-                                    r=v$r,
                                     M=v$M,
+                                    v=v$v,
                                     temp=winfs[i,2],
                                     Ea=v$Ea,
                                     gamma=v$gamma,
@@ -250,7 +261,7 @@ server = function(input, output, session) {
                                     p=v$p,
                                     q=v$q,
                                     n=v$n,
-                                    m = 10^seq(1,5,l=10000),
+                                    m = 10^seq(1,5,l=1000),
                                     ret_winf = T)
     }
     
@@ -275,8 +286,8 @@ server = function(input, output, session) {
     bind_shiny(plot_id = "ggvisplot")
   
   plot_data_temp %>%
-    ggvis(x=~O2, y=~tau_o2) %>%
-    add_axis("y", title = "\u03C4") %>%
+    ggvis(x=~Temperature, y=~M) %>%
+    add_axis("y", title = "M") %>%
     scale_numeric("y", domain = c(0, 1), clamp=T) %>%
     layer_lines()%>% 
     layer_points(size:=10)%>%
@@ -342,33 +353,37 @@ server = function(input, output, session) {
     bind_shiny(plot_id = "ggvispredplot")
   
   plot_data_growth %>%
-    ggvis(x=~m, y=~Carbon,strokeDash=~Term,stroke=~Limitation) %>%
+    ggvis(x=~m, y=~Rate,fill=~Term,size=3) %>%
     scale_numeric("x", trans="log",expand=0)%>%
     scale_numeric("y", trans="log",expand=0)%>%
     add_axis("y", grid=F) %>%
     add_axis("x", grid=F) %>%
-    group_by(Limitation,Term) %>% 
-    layer_paths()%>% 
+    group_by(Limitation,Term) %>%
+    layer_points(shape=~Limitation)%>%
+    add_legend(scale="fill", properties = legend_props(legend = list(y = 200))) %>%
+    #layer_paths()%>%
+   
     set_options(height = 300, width = 720)%>%
     #scale_nominal("stroke",label='Limitation') %>%
     #scale_nominal("strokeDash",label='Term') %>%
-    add_legend(scales = c("stroke","strokeDash")) %>%
-    bind_shiny(plot_id = "ggvisGvis")
+    bind_shiny(plot_id = "ggvisGvis")%>%
+    set_options(duration = 0)
   
-  plot_data_growth_tO2 %>%
-    ggvis(x=~O2, y=~Oxygen,stroke:='orange') %>%
-    layer_lines()%>%
-    layer_lines(x=~O2, y=~Base,stroke:='black')%>%
-    scale_numeric("y",label = 'm\u221E (g)',expand=0)%>%
-    set_options(height = 300, width = 300)%>%
-    bind_shiny(plot_id = "ggvisOGvis")
+  # plot_data_growth_tO2 %>%
+  #   ggvis(x=~O2, y=~Oxygen,stroke:='orange') %>%
+  #   layer_lines()%>%
+  #   layer_lines(x=~O2, y=~Base,stroke:='black')%>%
+  #   scale_numeric("y",label = 'm\u221E (g)',expand=0)%>%
+  #   set_options(height = 300, width = 300)%>%
+  #   bind_shiny(plot_id = "ggvisOGvis")
   
   plot_data_growth_tO2 %>%
     ggvis(x=~Temperature, y=~Temp,stroke:='green') %>%
+    scale_numeric("y", trans="log",expand=1)%>%
     layer_lines()%>%
     layer_lines(x=~Temperature, y=~Base,stroke:='black')%>%
     scale_numeric("y",label = 'm\u221E (g)',expand=0)%>%
-    set_options(height = 300, width = 300)%>%
+    set_options(height = 300, width = 720)%>%
     bind_shiny(plot_id = "ggvisTGvis")
   
 }

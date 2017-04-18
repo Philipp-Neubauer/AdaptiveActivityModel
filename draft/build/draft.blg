@@ -1,0 +1,16 @@
+[0] Config.pm:318> INFO - This is Biber 1.8
+[0] Config.pm:321> INFO - Logfile is 'build/draft.blg'
+[39] biber:275> INFO - === Fri Apr  7, 2017, 16:55:29
+[39] Biber.pm:333> INFO - Reading 'build/draft.bcf'
+[81] Biber.pm:630> INFO - Found 3 citekeys in bib section 0
+[92] Biber.pm:3053> INFO - Processing section 0
+[103] Biber.pm:3190> INFO - Looking for bibtex format file 'model.bib' for section 0
+[104] bibtex.pm:933> INFO - Decoding LaTeX character macros into UTF-8
+[106] bibtex.pm:808> INFO - Found BibTeX data source 'model.bib'
+[112] Utils.pm:169> WARN - BibTeX subsystem: /tmp/mcKa5gsM3H/model.bib_26.utf8, line 10, warning: 1 characters of junk seen at toplevel
+[127] Biber.pm:2939> INFO - Overriding locale 'en_NZ.UTF-8' default tailoring 'variable = shifted' with 'variable = non-ignorable'
+[127] Biber.pm:2945> INFO - Sorting 'entry' list 'nty' keys
+[127] Biber.pm:2949> INFO - No sort tailoring available for locale 'en_NZ.UTF-8'
+[132] bbl.pm:482> INFO - Writing 'build/draft.bbl' with encoding 'UTF-8'
+[132] bbl.pm:555> INFO - Output to build/draft.bbl
+[133] Biber.pm:105> INFO - WARNINGS: 1

@@ -1,9 +1,10 @@
 name: SizingtheFxofClimateChange
+title:
 account: dragonfly-science
 server: shinyapps.io
 appId: 120352
-bundleId: 535980
+bundleId: 777437
 url: https://dragonfly-science.shinyapps.io/SizingtheFxofClimateChange/
-when: 1471609278.1647
+when: 1491367588.72168
 asMultiple: FALSE
 asStatic: FALSE

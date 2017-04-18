@@ -53,7 +53,7 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                ),
                                
                                tabsetPanel(id="tabs",
-                                           tabPanel(title = 'Foraging',tabName ='Foraging',
+                                           tabPanel(title = 'Trophic',tabName ='Foraging',
                                                     conditionalPanel(
                                                       condition = "input.variable != 'gamma'",
                                                       sliderInput("gamma", 'Consumption rate', min=1, max=100, value=40,
@@ -67,7 +67,12 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                                     sliderInput("p", 'Consumption rate scaling', min=0.5, max=1, value=0.8,
                                                                 animate = animationOptions(interval=200)),
                                                     sliderInput("q", 'Maximum intake scaling', min=0.5, max=1, value=0.75,
+                                                                animate = animationOptions(interval=200)),
+                                                    sliderInput("M", 'M', min=0.1, max=3,step = 0.01,
+                                                                value=2,animate = animationOptions(interval=200)),
+                                                    sliderInput("v", 'Mortality scaling', min=0, max=3, value=1,step = 0.1,
                                                                 animate = animationOptions(interval=200))),
+                                           
                                            tabPanel(title = 'Metabolism',
                                                     conditionalPanel(
                                                       condition = "input.variable != 'beta'",
@@ -106,16 +111,10 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                                                 value=0.52,animate = animationOptions(interval=200)),
                                                     sliderInput("temp", 'Temp range (min to lethal)', min=0, max=32, value=c(1,30),
                                                                 animate = animationOptions(interval=200),dragRange = T),
-                                                    sliderInput("Topt", 'Optimal Temp', min=0, max=32, value=15,
+                                                    sliderInput("Topt", 'Optimal Temp', min=0, max=32, value=15,step=0.5,
+                                                                animate = animationOptions(interval=200)),
+                                                    sliderInput("Tref", 'W\u221E plot temp', min=0, max=32, value=15,step=0.5,
                                                                 animate = animationOptions(interval=200))
-                                           ),
-                                           tabPanel(title = 'W\u221E',tabName ='Growth',
-                                                    sliderInput("r", 'Reproduction allocation', min=0, max=0.6,step = 0.02,
-                                                                value=0.2,animate = animationOptions(interval=200)),
-                                                    sliderInput("temp_ref", 'Temperature', min=1, max=32,step = 1,
-                                                                value=20,animate = animationOptions(interval=200)),
-                                                    sliderInput("M", 'M', min=0.01, max=1,step = 0.01,
-                                                                value=0.2,animate = animationOptions(interval=200))
                                            )),
                                fluidRow(column(1,bookmarkButton(),offset = 4))),
     # Show a table summarizing the values entered
@@ -139,11 +138,11 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                       )
              ),
              tabPanel('W\u221E',
-                      tags$td(ggvisOutput("ggvisGvis")),
-                      tags$table(
-                        tags$td(ggvisOutput("ggvisOGvis")),
+                      #tags$td(ggvisOutput("ggvisGvis")),
+                      #tags$table(
+                        tags$td(ggvisOutput("ggvisGvis")),
                         tags$td(ggvisOutput("ggvisTGvis"))
-                      )
+                     # )
              )
       )
     )
