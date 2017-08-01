@@ -1,6 +1,11 @@
 require(dplyr)
 require(purrr)
+require(tidyr)
 require(ggplot2)
+require(cowplot)
+
+lw <- function(w) (w/0.0029)^(1/3.3365)
+sc <- function(x) x/max(x)
 
 O2_plotfun <- function(etas,Tops){
   grid <- expand.grid(eta = etas,
@@ -122,22 +127,21 @@ plot_data_temp <- function(v){
   scope <- f*v$m^v$n-model_frame$Metabolism*v$omega
   scope[scope<0.0001] <- 0
   #browser()
-  bc <- bind_cols(pd,
-                  o2frame,
-                  model_frame,
-                  data_frame(
-                    Temperature=v$temp,
-                    Realised = tau_max,
-                    Limit = sapply(sapply(max_tau,max,0),min,1),
-                    M = tau_max^v$v*v$M*v$m^(v$q-1),
-                    Optimum = sapply(sapply(tau,max,0),min,1),
-                    Scope=ifelse(scope<0.0001,0,scope),
-                    Supply = f*v$m^v$n,
-                    Demand = model_frame$Metabolism*v$omega,
-                    `Std Metabolism` = model_frame$Std*v$omega,
-                    Viable = as.numeric(tau_max>0.0001 & model_frame[['C for growth']]>0.0001))
+  bind_cols(pd,
+            o2frame,
+            model_frame,
+            data_frame(
+              Temperature=v$temp,
+              Realised = tau_max,
+              Limit = sapply(sapply(max_tau,max,0),min,1),
+              M = (tau_max*v$v+v$M)*v$m^(v$q-1),
+              Optimum = sapply(sapply(tau,max,0),min,1),
+              Scope=ifelse(scope<0.0001,0,scope),
+              `MMR` = f*v$m^v$n,
+              `Active M.` = model_frame$Metabolism*v$omega,
+              `Std M.` = model_frame$Std*v$omega,
+              Viable = as.numeric(tau_max>0.0001 & model_frame[['C for growth']]>0.0001))
   )
-  return(bc)
 }
 
 plot_data_growth <- function(v){
@@ -312,42 +316,11 @@ eval_tau_eq <- function(gamma=50,
                         M=0.2,
                         v=1){
   
-  #-(h*k*m^(n - p + q) + sqrt(-(beta - 1)*h*k*m^(n - 2*p + 3*q) - h*k*m^(n - 2*p + 3*q)*phi)*h)/((beta - 1)*gamma*h*m^q + gamma*h*m^q*phi + gamma*k*m^n)
   
   tc=1
-  tau <- logspace(0,3,1000)/1000
-  if(length(m) == 1) {
-    kk <- ((delta*tau + 1)*k*m^n*tc + (beta + phi - 1)*h*m^q*tau*tc/(h*m^(-p + q)*tc/gamma + tau))*v*tau^(v - 1)/(M*m^(n - 1)*tau^(2*v)) - (delta*k*m^n*tc + (beta + phi - 1)*h*m^q*tc/(h*m^(-p + q)*tc/gamma + tau) - (beta + phi - 1)*h*m^q*tau*tc/(h*m^(-p + q)*tc/gamma + tau)^2)/(M*m^(n - 1)*tau^v)
-    tau[which.min(abs(kk))]
-  } 
-  else {
-    taus <- rep(NA,length(m))
-    for (i in length(taus):1){
-      if(i<length(taus)) tau <- c(taus[i+1]+min(1-taus[i+1],taus[i+1])*logspace(0,4,500)/10000,taus[i+1]-taus[i+1]*logspace(0,4,500)/10000)
-      taus[i] <- tau[which.min(abs(((delta*tau + 1)*k*m[i]^n*tc + (beta + phi - 1)*h*m[i]^q*tau*tc/(h*m[i]^(-p + q)*tc/gamma + tau))*v*tau^(v - 1)/(m[i]*m[i]^(n - 1)*tau^(2*v)) - (delta*k*m[i]^n*tc + (beta + phi - 1)*h*m[i]^q*tc/(h*m[i]^(-p + q)*tc/gamma + tau) - (beta + phi - 1)*h*m[i]^q*tau*tc/(h*m[i]^(-p + q)*tc/gamma + tau)^2)/(m[i]*m[i]^(n - 1)*tau^v)))]
-    }
-    taus
-  } 
+  -(M*delta*h*k*m^(n - p + q)*tc - h*k*m^(n - p + q)*tc*v - sqrt(-((beta - 1)*h*k*m^(n - 2*p + 3*q) + h*k*m^(n - 2*p + 3*q)*phi)*tc^2*v^2 - ((beta - 1)*delta*gamma*k*m^(n - p + 2*q) + delta*gamma*k*m^(n - p + 2*q)*phi)*M^2*tc + (((beta - 1)*delta*h*k*m^(n - 2*p + 3*q) + delta*h*k*m^(n - 2*p + 3*q)*phi)*tc^2 + (gamma*h*m^(-p + 3*q)*phi^2 + (beta - 1)*gamma*k*m^(n - p + 2*q) + (beta^2 - 2*beta + 1)*gamma*h*m^(-p + 3*q) + (2*(beta - 1)*gamma*h*m^(-p + 3*q) + gamma*k*m^(n - p + 2*q))*phi)*tc)*M*v)*h)/(M*delta*gamma*k*m^n - ((beta - 1)*gamma*h*m^q + gamma*h*m^q*phi + gamma*k*m^n)*v)
   
-}
-
-logspace <- function( d1, d2, n) exp(log(10)*seq(d1, d2, length.out=n)) 
-
-ff <- function(tau,gamma=50,
-               delta=2,
-               phi=10,
-               h=30,
-               beta=0.75,
-               k=2,
-               p=0.8,
-               q=0.9,
-               n=0.8,
-               m=100,
-               M=0.2,
-               v=1,tc=NULL){
-  ((delta*tau + 1)*k*m^n*tc + 
-     (beta + phi - 1)*h*m^q*tau*tc/(h*m^(-p + q)*tc/gamma + tau))*m^(-q + 1)*tau^(-v - 1)*v/M - (delta*k*m^n*tc +                                                                                               (beta + phi - 1)*h*m^q*tc/(h*m^(-p + q)*tc/gamma + tau) - 
-                                                                                                   (beta + phi - 1)*h*m^q*tau*tc/(h*m^(-p + q)*tc/gamma + tau)^2)*m^(-q + 1)/(M*tau^v)
+  
 }
 
 
@@ -368,59 +341,7 @@ eval_tau_eq_temp <- function(Ea,
   
   tc = exp(Ea*((temp+273.2)-288.2)/(8.6173324*10^(-5)*(temp+273.2)*288.2))
   
-  #-(h*k*m^(n - p + q)*tc + sqrt(-(beta - 1)*h*k*m^(n - 2*p + 3*q) - h*k*m^(n - 2*p + 3*q)*phi)*h*tc)/((beta - 1)*gamma*h*m^q + gamma*h*m^q*phi + gamma*k*m^n)
-  #browser()
-  tau <- logspace(0,3,1000)/1000
-  if(length(m) == 1 & length(tc) ==1) {
-    k <- ((delta*tau + 1)*k*m^n*tc + 
-            (beta + phi - 1)*h*m^q*tau*tc/(h*m^(-p + q)*tc/gamma + tau))*m^(-q + 1)*tau^(-v - 1)*v/M - (delta*k*m^n*tc +                                                                                               (beta + phi - 1)*h*m^q*tc/(h*m^(-p + q)*tc/gamma + tau) - 
-                                                                                                          (beta + phi - 1)*h*m^q*tau*tc/(h*m^(-p + q)*tc/gamma + tau)^2)*m^(-q + 1)/(M*tau^v)
-    
-    #+BEGIN_SRC  sage :session Sage
-    solve(0==  ((delta*tau + 1)*k*m^n*tc + (beta + phi - 1)*h*m^q*tau*tc/(h*m^(-p + q)*tc/gamma + tau))*r*tau^(r - 1)/(M*tau^(2*r)) - (delta*k*m^n*tc + (beta + phi - 1)*h*m^q*tc/(h*m^(-p + q)*tc/gamma + tau) - (beta + phi - 1)*h*m^q*tau*tc/(h*m^(-p + q)*tc/gamma + tau)^2)/(M*tau^r),tau)
-    #+END_SRC
-    
-    tau[which.min(abs(kk))]
-  } 
-  else if(length(m) > 1 & length(tc) ==1) {
-    taus <- rep(NA,length(m))
-    for (i in length(taus):1){
-      if(i<length(taus)) tau <- c(taus[i+1]+min(1-taus[i+1],taus[i+1])*logspace(0,4,500)/10000,taus[i+1]-taus[i+1]*logspace(0,4,1000)/10000)
-      kk <- ((delta*tau + 1)*k*m[i]^n*tc + 
-               (beta + phi - 1)*h*m[i]^q*tau*tc/(h*m[i]^(-p + q)*tc/gamma + tau))*m[i]^(-q + 1)*tau^(-v - 1)*v/m[i] - 
-        (delta*k*m[i]^n*tc + (beta + phi - 1)*h*m[i]^q*tc/(h*m[i]^(-p + q)*tc/gamma + tau) - 
-           (beta + phi - 1)*h*m[i]^q*tau*tc/(h*m[i]^(-p + q)*tc/gamma + tau)^2)*m[i]^(-q + 1)/(m[i]*tau^v)      
-      
-      taus[i] <- tau[which.min(abs(kk))]
-    }
-    taus
-  } else {
-    taus <- rep(NA,length(tc))
-    #browser()
-    for (i in length(taus):1){
-      
-      if(i<length(taus)) tau <- c(taus[i+1]+min(1-taus[i+1],taus[i+1])*logspace(0,4,500)/10000,taus[i+1]-taus[i+1]*logspace(0,4,1000)/10000)
-      kk <- ((delta*tau + 1)*k*m^n*tc[i] + 
-               (beta + phi - 1)*h*m^q*tau*tc[i]/(h*m^(-p + q)*tc[i]/gamma + tau))*m^(-q + 1)*tau^(-v - 1)*v/M - 
-        (delta*k*m^n*tc[i] + (beta + phi - 1)*h*m^q*tc[i]/(h*m^(-p + q)*tc[i]/gamma + tau) - 
-           (beta + phi - 1)*h*m^q*tau*tc[i]/(h*m^(-p + q)*tc[i]/gamma + tau)^2)*m^(-q + 1)/(M*tau^v)      
-      taus[i] <- tau[which.min(abs(kk))]
-      if(numDeriv::grad(func = ff,x = taus[i],gamma=gamma,
-                        delta=delta,
-                        phi=phi,
-                        h=h,
-                        beta=beta,
-                        k=k,
-                        p=p,
-                        q=q,
-                        n=n,
-                        m=m,
-                        M=M,
-                        v=v,tc=tc[i],method='simple') >0) warning(paste('not optimal at temp ',temp,'\n'))
-      
-    }
-    taus
-  }
+  -(M*delta*h*k*m^(n - p + q)*tc - h*k*m^(n - p + q)*tc*v - sqrt(-((beta - 1)*h*k*m^(n - 2*p + 3*q) + h*k*m^(n - 2*p + 3*q)*phi)*tc^2*v^2 - ((beta - 1)*delta*gamma*k*m^(n - p + 2*q) + delta*gamma*k*m^(n - p + 2*q)*phi)*M^2*tc + (((beta - 1)*delta*h*k*m^(n - 2*p + 3*q) + delta*h*k*m^(n - 2*p + 3*q)*phi)*tc^2 + (gamma*h*m^(-p + 3*q)*phi^2 + (beta - 1)*gamma*k*m^(n - p + 2*q) + (beta^2 - 2*beta + 1)*gamma*h*m^(-p + 3*q) + (2*(beta - 1)*gamma*h*m^(-p + 3*q) + gamma*k*m^(n - p + 2*q))*phi)*tc)*M*v)*h)/(M*delta*gamma*k*m^n - ((beta - 1)*gamma*h*m^q + gamma*h*m^q*phi + gamma*k*m^n)*v)
   
 }
 
@@ -450,16 +371,18 @@ model_out <- function(tau_max,
   predation_rate <- f/phi
   
   met = beta*f*tc*h*m^q+ ((1+tau_max*delta)*k*tc*m^n)
-  data_frame(feeding= f, 
+  
+  #browser()
+  
+  data_frame(`Feeding level`= f, 
              Consumption = inp,
              `C used for Metabolism` = out,
-             e = e, 
+             `C for growth` = e, 
              Efficiency = efficiency, 
-             pred=predation_rate, 
+             `Predation rate`=predation_rate, 
              Metabolism = met,
              Std = k*tc*m^n)
 }
-
 get_dPdm <- function(m=NULL,tau,
                      tc,
                      r=0.2,
@@ -472,7 +395,7 @@ get_dPdm <- function(m=NULL,tau,
                      k=2,
                      p=0.8,
                      q=0.9,
-                     n=0.8) ((delta*tau + 1)*k*m^n*tc + (beta + phi - 1)*h*m^q*tau*tc/(h*m^(-p + q)*tc/gamma + tau))*m^(-q)*(q - 1)/(M*tau^r) - ((delta*tau + 1)*k*m^(n - 1)*n*tc + (beta + phi - 1)*h*m^(q - 1)*q*tau*tc/(h*m^(-p + q)*tc/gamma + tau) + (beta + phi - 1)*h^2*m^(-p + 2*q - 1)*(p - q)*tau*tc^2/((h*m^(-p + q)*tc/gamma + tau)^2*gamma))*m^(-q + 1)/(M*tau^r)
+                     n=0.8) ((delta*tau + 1)*k*m^n*tc + (beta + phi - 1)*h*m^q*tau*tc/(h*m^(-p + q)*tc/gamma + tau))*m^(-q)*(q - 1)/(tau*r + M) - ((delta*tau + 1)*k*m^(n - 1)*n*tc + (beta + phi - 1)*h*m^(q - 1)*q*tau*tc/(h*m^(-p + q)*tc/gamma + tau) + (beta + phi - 1)*h^2*m^(-p + 2*q - 1)*(p - q)*tau*tc^2/((h*m^(-p + q)*tc/gamma + tau)^2*gamma))*m^(-q + 1)/(tau*r + M)
 
 model_out_par <- function(tau_max,
                           tau,
@@ -558,9 +481,9 @@ model_out_par <- function(tau_max,
 
 
 O2_supply <- function(O2 = 1:100,O2crit=20,P50 = 40, Tmax=30,Topt=15,T,omega=1.870,delta=1038,n=0.8){
-  
+
   level <- delta*((Tmax-T)/(Tmax-Topt))^omega*exp(-omega*(Tmax-T)/(Tmax-Topt))/exp(-omega)
-  365*24*level*(1-exp(-(O2-O2crit)/(-(P50-O2crit)/log(0.5))))/(1000*100^0.8)
+  365*24*level*(1-exp(-(O2-O2crit)/(-(P50-O2crit)/log(0.5))))/1000
   
 }
 
