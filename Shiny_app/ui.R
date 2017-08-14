@@ -32,12 +32,20 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
     # Sidebar with sliders that demonstrate various available options
     sidebar = dashboardSidebar(width = 420,
                                sliderInput("m", 'Mass', min=1, max=10000, value=100,width = 350),
-                               sliderInput("lm", 'dMass', min=100, max=10000, value=1000,width = 350),
-                               sliderInput("n_int", 'dTemp', min=10, max=100, value=50,width = 350),
-                              # fluidRow(column(12,h3("Run Simulations"),offset = 3)),
-                               #fluidRow(column(1,actionButton("go", "Go"),offset = 5)),
+                               sliderInput("lm", 'dMass', min=100, max=10000, value=300,width = 350),
+                               sliderInput("n_int", 'dTemp', min=10, max=100, value=30,width = 350),
+                               fluidRow(column(12,h3("Run Simulations"),offset = 3)),
+                               fluidRow(column(1,actionButton("go", "Go"),offset = 4)),
                                fluidRow(column(1,h3(""),offset = 4)),
+                                          
                                tabsetPanel(id="tabs",
+                                           tabPanel(title = 'RN',tabName ='RN',
+                                                    sliderInput("tmax", 'Max time', min=0, max=100, value=40,width = 350),
+                                                    sliderInput("slope", 'Reaction norm slope', min=-2, max=2, value=-0.01,step=0.01,width = 350),
+                                                    sliderInput("tr", 'Reaction', min=0, max=10, value=1,step=0.1,width = 350),
+                                                    sliderInput("c", 'Env change', min=0, max=1, value=0.02,step=0.01,width = 350),
+                                                    sliderInput("rho", 'Env-mort corr', min=-10, max=10, value=10,step=0.1,width = 350)
+                                           ),
                                            tabPanel(title = 'Trophic',tabName ='Foraging',
                                                     sliderInput("gamma", 'Maximum encountered food', min=1, max=100, value=40,
                                                                   animate = animationOptions(interval=3000)),
@@ -45,11 +53,13 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                                                   animate = animationOptions(interval=3000)),
                                                     sliderInput("p", 'Consumption scaling', min=0.5, max=1, value=0.8,
                                                                 animate = animationOptions(interval=3000)),
-                                                    sliderInput("q", 'Maximum intake scaling', min=0.5, max=1, value=0.75,
+                                                    sliderInput("q", 'Maximum intake scaling', min=0.5, max=1, value=0.8,
                                                                 animate = animationOptions(interval=3000)),
                                                     sliderInput("M", 'M', min=0.01, max=1,step = 0.01,
                                                                 value=0.1,animate = animationOptions(interval=3000)),
-                                                    sliderInput("v", 'Mortality scaling', min=0, max=10, value=0.5,step = 0.1,
+                                                    sliderInput("v", 'Mortality coeff', min=0, max=10, value=6,step = 0.1,
+                                                                animate = animationOptions(interval=3000)),
+                                                    sliderInput("nu", 'Mortality scaling', min=-1, max=0, value=-0.2,step = 0.05,
                                                                 animate = animationOptions(interval=3000))),
                                            
                                            tabPanel(title = 'Metabolism',
@@ -92,8 +102,11 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
       #box(width = 12,height=1500,background = NULL,
               
       fluidRow(column(6,plotOutput("Tauplot")),column(6,plotOutput("O2plot"))),
-      fluidRow(column(6,plotOutput("Eplot")),column(6,plotOutput("TGvis")))
-      
+      fluidRow(column(6,plotOutput("Eplot")),column(6,plotOutput("TGvis"))),
+      fluidRow(column(6,plotOutput("dPm")),column(6,plotOutput("Pm"))),
+      fluidRow(column(6,plotOutput("alloc")),column(6,plotOutput("ls"))),
+      fluidRow(column(6,plotOutput("la")),column(6,plotOutput("norm")))
+      #fluidRow(column(6,plotOutput("MEplot")),column(6,plotOutput("am")))
     )
     
     )}
