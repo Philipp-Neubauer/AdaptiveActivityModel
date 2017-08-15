@@ -4,13 +4,20 @@ require(tidyr)
 require(ggplot2)
 require(cowplot)
 
-lw <- function(w) (w/0.003)^(1/3)
+lw <- function(w) (w/0.01)^(1/3)
 sc <- function(x) x/max(x)
 logit <- function(p) log(p/(1-p))
 inv_logit <- function(x,a,b) 1/(1+exp(-(b*(x-a))))
 inv_logit2 <- function(s,a,b,c,d) 1/(1+exp(-(b+c*s+d*a)))
-#inv_logit3 <- function(m,mstar,a,b,c) 1/(1+exp(-(m-mstar-b*a/m)))
-inv_logit3 <- function(m,mstar,a,b,c) 1/(1+ (m/(mstar+b*a))^-c)
+#
+#inv_logit3 <- function(m,mstar,a,b,c) 1/(1+ (m/(mstar+b*a))^-c)
+inv_logit3 <- function(m,mstar,a,b,c) {
+  z = (m-mstar)*cos(atan(b))-a*sin(atan(b))
+  #zstar = mstar*cos(atan(b))-a*sin(atan(b))
+  #1/(1+ (z/mstar)^-c)
+  1/(1+exp(-(c*z)))
+}
+  
 
 
 O2_plotfun <- function(etas,Tops){
@@ -22,7 +29,7 @@ O2_plotfun <- function(etas,Tops){
     ts = ts/max(ts)
   }
   
-
+  
   g <- grid %>% 
     by_row(~O2fun(.x), .collate='rows') %>%
     group_by(.row) %>%
@@ -138,18 +145,18 @@ plot_data_temp <- function(v){
   gtau <- get_taus(w,1,10,v$temp_ref,m=v$m)$tau_max
   
   model_frame_g <- model_out(tau_max = gtau,
-                           temp=v$temp,
-                           Ea=v$Ea,
-                           gamma=w$gamma,
-                           delta=v$delta,
-                           phi=v$phi,
-                           h=v$h,
-                           beta=v$beta,
-                           k=v$k,
-                           p=v$p,
-                           q=v$q,
-                           n=v$n,
-                           m=v$m)
+                             temp=v$temp,
+                             Ea=v$Ea,
+                             gamma=w$gamma,
+                             delta=v$delta,
+                             phi=v$phi,
+                             h=v$h,
+                             beta=v$beta,
+                             k=v$k,
+                             p=v$p,
+                             q=v$q,
+                             n=v$n,
+                             m=v$m)
   
   #browser()
   bind_cols(pd,
@@ -312,6 +319,7 @@ eval_dtau <- function(tau = seq(0,1,l=100),
 
 eval_dtau_temp <- function(Ea,
                            temp,
+                           temp_ref=15,
                            tau = seq(0,1,l=100),
                            gamma=50,
                            delta=2,
@@ -324,7 +332,7 @@ eval_dtau_temp <- function(Ea,
                            n=0.8,
                            m=100){
   
-  tc = exp(Ea*((temp+273.2)-288.2)/(8.6173324*10^(-5)*(temp+273.2)*288.2))
+  tc = exp(Ea*((temp+(288.2-temp_ref))-288.2)/(8.6173324*10^(-5)*(temp+(288.2-temp_ref))*288.2))
   
   #delta*(-k)*tc*m^n-((1-beta-phi)*gamma^2*tau*tc*h*m^(2*p+q))/(gamma*tau*m^p+tc*h*m^q)^2+((1-beta-phi)*gamma*tc*h*m^(p+q))/(gamma*tau*phi*m^p+tc*h*m^q)
   
@@ -353,6 +361,7 @@ eval_tau_eq <- function(gamma=50,
 
 eval_tau_eq_temp <- function(Ea,
                              temp,
+                             temp_ref=15,
                              gamma=50,
                              delta=2,
                              phi=10,
@@ -366,7 +375,7 @@ eval_tau_eq_temp <- function(Ea,
                              M=0.2,
                              v=1){
   
-  tc = exp(Ea*((temp+273.2)-288.2)/(8.6173324*10^(-5)*(temp+273.2)*288.2))
+  tc = exp(Ea*((temp+(288.2-temp_ref))-288.2)/(8.6173324*10^(-5)*(temp+(288.2-temp_ref))*288.2))
   
   -(M*delta*h*k*m^(n - p + q)*tc - h*k*m^(n - p + q)*tc*v - sqrt(-((beta - 1)*h*k*m^(n - 2*p + 3*q) + h*k*m^(n - 2*p + 3*q)*phi)*tc^2*v^2 - ((beta - 1)*delta*gamma*k*m^(n - p + 2*q) + delta*gamma*k*m^(n - p + 2*q)*phi)*M^2*tc + (((beta - 1)*delta*h*k*m^(n - 2*p + 3*q) + delta*h*k*m^(n - 2*p + 3*q)*phi)*tc^2 + (gamma*h*m^(-p + 3*q)*phi^2 + (beta - 1)*gamma*k*m^(n - p + 2*q) + (beta^2 - 2*beta + 1)*gamma*h*m^(-p + 3*q) + (2*(beta - 1)*gamma*h*m^(-p + 3*q) + gamma*k*m^(n - p + 2*q))*phi)*tc)*M*v)*h)/(M*delta*gamma*k*m^n - ((beta - 1)*gamma*h*m^q + gamma*h*m^q*phi + gamma*k*m^n)*v)
   
@@ -374,6 +383,7 @@ eval_tau_eq_temp <- function(Ea,
 
 model_out <- function(tau_max,
                       temp,
+                      temp_ref=15,
                       Ea,
                       r=0.2,
                       gamma=50,
@@ -387,7 +397,7 @@ model_out <- function(tau_max,
                       n=0.8,
                       m=100){
   
-  tc = exp(Ea*((temp+273.2)-288.2)/(8.6173324*10^(-5)*(temp+273.2)*288.2))
+  tc = exp(Ea*((temp+(288.2-temp_ref))-288.2)/(8.6173324*10^(-5)*(temp+(288.2-temp_ref))*288.2))
   
   f <- tau_max*gamma*m^p/(tau_max*gamma*m^p+tc*h*m^q)
   inp <- (1-phi-beta)*f*tc*h*m^q
@@ -427,6 +437,7 @@ get_dPdm <- function(m=NULL,tau,
 
 model_out_par <- function(tau_max,
                           temp,
+                          temp_ref=15,
                           Ea,
                           M=0.2,
                           v=1,
@@ -443,7 +454,7 @@ model_out_par <- function(tau_max,
                           m=10^seq(0,6,l=1000)){
   
   #browser()
-  tc = exp(Ea*((temp+273.2)-288.2)/(8.6173324*10^(-5)*(temp+273.2)*288.2))
+  tc = exp(Ea*((temp+(288.2-temp_ref))-288.2)/(8.6173324*10^(-5)*(temp+(288.2-temp_ref))*288.2))
   
   
   f <- tau_max*gamma*m^p/(tau_max*gamma*m^p+tc*h*m^q)
@@ -468,58 +479,7 @@ model_out_par <- function(tau_max,
 }
 
 model_out_growth <- function(temp,
-                             l,
-                          Ea,
-                          gamma=50,
-                          delta=2,
-                          phi=0.15,
-                          h=30,
-                          beta=0.2,
-                          k=2,
-                          p=0.8,
-                          q=0.9,
-                          n=0.8,
-                          mstar=1000,
-                          tmax=10,
-                          slope=0.05,
-                          tr = 1,
-                          v=NULL){
-  
-  #browser()
-  tc = exp(Ea*((temp+273.2)-288.2)/(8.6173324*10^(-5)*(temp+273.2)*288.2))
-  
-  ts <- seq(1,tmax,l=l)
-  s <- vector()
-  allocs <- vector()
-  s[1] <- 0.01
-  
-  tm1 <- get_taus(v,1,10,temp,mstar)$tau_max
-  f <- tm1*gamma*mstar^p/(tm1*gamma*mstar^p+tc*h*mstar^q)
-  inp <- (1-phi-beta)*f*tc*h*mstar^q
-  out <- (1+ tm1*delta)*k*tc*mstar^n
-  Esp=inp-out
-  #browser()
-  
-  for(t in 2:l) {
-    tm1 <- get_taus(v,1,10,temp,s[t-1])$tau_max
-    f <- tm1*gamma*s[t-1]^p/(tm1*gamma*s[t-1]^p+tc*h*s[t-1]^q)
-    inp <- (1-phi-beta)*f*tc*h*s[t-1]^q
-    out <- (1+ tm1*delta)*k*tc*s[t-1]^n 
-    Es=inp-out
-    allocs[t] = min(max(allocs[t-1],inv_logit3(lw(s[t-1]),lw(mstar),Esp,slope,tr),na.rm=T),1)
-   
-    s[t] = s[t-1]+(tmax/l)*(1-allocs[t])*Es
-  }
-  ls = lw(s)
-  data_frame(Temperature=temp,
-             ls=ls,
-             allocs=allocs,
-             t=ts)
-  
-}
-
-
-model_out_growth_check <- function(temp,
+                             temp_ref=15,
                              l,
                              Ea,
                              gamma=50,
@@ -531,11 +491,58 @@ model_out_growth_check <- function(temp,
                              p=0.8,
                              q=0.9,
                              n=0.8,
-                             nu,
-                             M,
-                             v,
+                             mstar=1000,
                              tmax=10,
-                             dat=NULL){
+                             slope=0.05,
+                             tr = 1,
+                             v=NULL){
+  
+  #browser()
+  tc = exp(Ea*((temp+(288.2-temp_ref))-288.2)/(8.6173324*10^(-5)*(temp+(288.2-temp_ref))*288.2))
+  
+  ts <- seq(0,tmax,l=l)
+  s <- vector()
+  allocs <- vector()
+  s[1] <- 0.01
+
+  
+  for(t in 2:l) {
+    tm1 <- get_taus(v,1,10,temp,s[t-1])$tau_max
+    f <- tm1*gamma*s[t-1]^p/(tm1*gamma*s[t-1]^p+tc*h*s[t-1]^q)
+    inp <- (1-phi-beta)*f*tc*h*s[t-1]^q
+    out <- (1+ tm1*delta)*k*tc*s[t-1]^n 
+    Es=inp-out
+    allocs[t] = min(max(allocs[t-1],inv_logit3(lw(s[t-1]),lw(mstar),ts[t],slope,tr),na.rm=T),1)
+    
+    s[t] = s[t-1]+(tmax/l)*(1-allocs[t])*Es
+  }
+  ls = lw(s)
+  data_frame(Temperature=temp,
+             Growth=gamma,
+             ls=ls,
+             allocs=allocs,
+             t=ts)
+  
+}
+
+
+model_out_growth_check <- function(temp,
+                                   l,
+                                   Ea,
+                                   gamma=50,
+                                   delta=2,
+                                   phi=0.15,
+                                   h=30,
+                                   beta=0.2,
+                                   k=2,
+                                   p=0.8,
+                                   q=0.9,
+                                   n=0.8,
+                                   nu,
+                                   M,
+                                   v,
+                                   tmax=10,
+                                   dat=NULL){
   
   #browser()
   tc = 1
@@ -566,16 +573,16 @@ model_out_growth_check <- function(temp,
              allocs=allocs,
              t=ts)
   
-#  (Eq*h*m^(q - 1)*nu - Eq*h*m^(q - 1)*q - (h*m^(q - 1)*nu - h*m^(q - 1)*q)*E - (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tauq)*M/(k*m^(n - 1)*n - k*m^(n - 1)*nu + (h*m^(q - 1)*nu - h*m^(q - 1)*q)*E + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau)
-
-#  -(Eq*h*m^(q - 1)*nu*phi + (Eq*beta - Eq)*h*m^(q - 1)*nu - ((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E - (Eq*h*m^(q - 1)*phi + (Eq*beta - Eq)*h*m^(q - 1))*q + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau - (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tauq)*M/(k*m^(n - 1)*n - k*m^(n - 1)*nu - ((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau)
-
-#  -(((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E*tauq*v - (Eq*h*m^(q - 1)*nu*phi + (Eq*beta - Eq)*h*m^(q - 1)*nu - ((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E - (Eq*h*m^(q - 1)*phi + (Eq*beta - Eq)*h*m^(q - 1))*q + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau - (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tauq)*M - ((Eq*h*m^(q - 1)*nu*phi - k*m^(n - 1)*n + ((Eq*beta - Eq)*h*m^(q - 1) + k*m^(n - 1))*nu - (Eq*h*m^(q - 1)*phi + (Eq*beta - Eq)*h*m^(q - 1))*q)*tau + (k*m^(n - 1)*n - k*m^(n - 1)*nu)*tauq)*v)/(((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E*tauq - (k*m^(n - 1)*n - k*m^(n - 1)*nu + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau)*tauq)
-
+  #  (Eq*h*m^(q - 1)*nu - Eq*h*m^(q - 1)*q - (h*m^(q - 1)*nu - h*m^(q - 1)*q)*E - (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tauq)*M/(k*m^(n - 1)*n - k*m^(n - 1)*nu + (h*m^(q - 1)*nu - h*m^(q - 1)*q)*E + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau)
+  
+  #  -(Eq*h*m^(q - 1)*nu*phi + (Eq*beta - Eq)*h*m^(q - 1)*nu - ((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E - (Eq*h*m^(q - 1)*phi + (Eq*beta - Eq)*h*m^(q - 1))*q + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau - (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tauq)*M/(k*m^(n - 1)*n - k*m^(n - 1)*nu - ((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau)
+  
+  #  -(((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E*tauq*v - (Eq*h*m^(q - 1)*nu*phi + (Eq*beta - Eq)*h*m^(q - 1)*nu - ((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E - (Eq*h*m^(q - 1)*phi + (Eq*beta - Eq)*h*m^(q - 1))*q + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau - (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tauq)*M - ((Eq*h*m^(q - 1)*nu*phi - k*m^(n - 1)*n + ((Eq*beta - Eq)*h*m^(q - 1) + k*m^(n - 1))*nu - (Eq*h*m^(q - 1)*phi + (Eq*beta - Eq)*h*m^(q - 1))*q)*tau + (k*m^(n - 1)*n - k*m^(n - 1)*nu)*tauq)*v)/(((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E*tauq - (k*m^(n - 1)*n - k*m^(n - 1)*nu + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau)*tauq)
+  
 }
 
 O2_supply <- function(O2 = 1:100,O2crit=20,P50 = 40,Tmax=30,Topt=15,T,omega=1.870,delta=1038,n=0.8){
-
+  
   level <- delta*((Tmax-T)/(Tmax-Topt))^omega*exp(-omega*(Tmax-T)/(Tmax-Topt))/exp(-omega)
   365*24*level*(1-exp(-(O2-O2crit)/(-(P50-O2crit)/log(0.5))))/1000
   
@@ -612,6 +619,7 @@ O2_fact <- function(temp,Tref=15){
 eval_tau_max_temp <- function(f=O2_supply(),
                               Ea = 0.52,
                               temp=seq(5,10,l=100),
+                              temp_ref=15,
                               omega = 0.4,
                               gamma=50,
                               delta=2,
@@ -624,7 +632,7 @@ eval_tau_max_temp <- function(f=O2_supply(),
                               n=0.8,
                               m=100){
   
-  tc = exp(Ea*((temp+273.2)-288.2)/(8.6173324*10^(-5)*(temp+273.2)*288.2))
+  tc = exp(Ea*((temp+(288.2-temp_ref))-288.2)/(8.6173324*10^(-5)*(temp+(288.2-temp_ref))*288.2))
   
   tau_max<-(m^(-n-p)*(sqrt((gamma*(-f)*m^(n+p)+gamma*tc*k*omega*m^(n+p)+delta*k*tc^2*h*omega*m^(n+q)+beta*tc*gamma*h*omega*m^(p+q))^2-4*gamma*delta*tc*k*omega*m^(n+p)*(k*h*tc^2*omega*m^(n+q)-f*h*tc*m^(n+q)))+gamma*f*m^(n+p)-gamma*k*omega*tc*m^(n+p)-delta*k*h*tc^2*omega*m^(n+q)-beta*gamma*h*tc*omega*m^(p+q)))/(2*gamma*delta*tc*k*omega)
   
