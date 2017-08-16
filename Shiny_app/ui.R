@@ -32,7 +32,7 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
     # Sidebar with sliders that demonstrate various available options
     sidebar = dashboardSidebar(width = 420,
                                sliderInput("m", 'Mass', min=1, max=10000, value=100,width = 350),
-                               sliderInput("lm", 'dMass', min=100, max=10000, value=300,width = 350),
+                               sliderInput("lm", 'dMass', min=100, max=10000, value=100,width = 350),
                                sliderInput("n_int", 'dTemp', min=10, max=100, value=30,width = 350),
                                fluidRow(column(12,h3("Run Simulations"),offset = 3)),
                                fluidRow(column(1,actionButton("go", "Go"),offset = 4)),
@@ -41,8 +41,8 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                tabsetPanel(id="tabs",
                                            tabPanel(title = 'RN',tabName ='RN',
                                                     sliderInput("tmax", 'Max time', min=0, max=100, value=40,width = 350),
-                                                    sliderInput("slope", 'Reaction norm slope', min=-2, max=2, value=1,step=0.01,width = 350),
-                                                    sliderInput("tr", 'Reaction', min=0, max=10, value=2,step=0.1,width = 350),
+                                                    sliderInput("slope", 'Reaction norm slope', min=-2, max=2, value=0.1,step=0.01,width = 350),
+                                                    sliderInput("tr", 'Reaction', min=0, max=10, value=0.5,step=0.1,width = 350),
                                                     sliderInput("c", 'Env change', min=0, max=1, value=0.3,step=0.1,width = 350)
                                            ),
                                            tabPanel(title = 'Trophic',tabName ='Foraging',
@@ -91,7 +91,7 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                                                 animate = animationOptions(interval=3000)),
                                                     sliderInput("shape", 'Scope shape', min=0, max=5, value=3,step=0.1,
                                                                 animate = animationOptions(interval=3000)),
-                                                    sliderInput("Tref", 'W\u221E plot temp', min=0, max=32, value=15,step=0.5,
+                                                    sliderInput("Tref", 'W\u221E plot temp', min=0, max=32, value=10,step=0.5,
                                                                 animate = animationOptions(interval=3000))
                                            )),
                                fluidRow(column(1,bookmarkButton(),offset = 4))),
@@ -104,10 +104,8 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                plotOutput("Eplot")),
       tabPanel('Eco reaction',
                fluidRow(column(6,plotOutput("am")),column(6,plotOutput("alloc"))),
-               fluidRow(column(6,plotOutput("ls")),column(6,plotOutput("la"))),
-               fluidRow(plotOutput("norm"))),
+               fluidRow(column(6,plotOutput("ls")),column(6,plotOutput("norm")))),
       tabPanel('Evo reaction',
-               fluidRow(column(6,plotOutput("dPm")),column(6,plotOutput("Pm"))),
                fluidRow(column(6,plotOutput("TGvis")),column(6,plotOutput("Gvis"))))
              
     ))

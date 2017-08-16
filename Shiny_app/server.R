@@ -179,195 +179,15 @@ server = function(input, output, session) {
     #browser()
     n_int <- v$n_int
     O2_range <- seq(1,10,l=n_int)
-    winfs <- data.frame(matrix(NA,n_int,3))
-    winfs[,1] <- O2_range
-    winfs[,2] <- seq(min(v$temp),max(v$temp),l=n_int)
     
-    taus_ref <- get_taus(v,1,10,v$temp_ref,m=lm)
-    
-    mout_ref <- model_out_par(tau_max = taus_ref$tau_max,
-                          M=v$M,
-                          v=v$v,
-                          nu=v$nu,
-                          temp=v$temp_ref,
-                          temp_ref=v$temp_ref,
-                          Ea=v$Ea,
-                          gamma=v$gamma,
-                          delta=v$delta,
-                          phi=v$phi,
-                          h=v$h,
-                          beta=v$beta,
-                          k=v$k,
-                          p=v$p,
-                          q=v$q,
-                          n=ifelse(v$n==v$q,v$n+0.1,v$n),
-                          m = lm)
-  
-    withProgress(message = 'Calculating Winf', value = 0, {
-      mouts <- parallel::mclapply(1:n_int, function(i){#parallel::mclapply(1:n_int, function(i){
-        taus <- get_taus(v,1,winfs[i,1],winfs[i,2],m=lm)
-        
-        mout <- model_out_par(tau_max = taus$tau_max,
-                              M=v$M,
-                              v=v$v,
-                              nu=v$nu,
-                              temp=winfs[i,2],
-                              temp_ref=v$temp_ref,
-                              Ea=v$Ea,
-                              gamma=v$gamma,
-                              delta=v$delta,
-                              phi=v$phi,
-                              h=v$h,
-                              beta=v$beta,
-                              k=v$k,
-                              p=v$p,
-                              q=v$q,
-                              n=v$n,
-                              m = lm)
-        #browser()
-        mout$gout <- model_out_growth(temp=winfs[i,2],
-                                      temp_ref=v$temp_ref,
-                                      l=v$lm,
-                                      Ea=v$Ea,
-                                      gamma=v$gamma,
-                                      delta=v$delta,
-                                      phi=v$phi,
-                                      h=v$h,
-                                      beta=v$beta,
-                                      k=v$k,
-                                      p=v$p,
-                                      q=v$q,
-                                      n=v$n,
-                                      mstar = mout_ref$winf,
-                                      tmax = v$tmax,
-                                      slope=v$slope,
-                                      tr=v$tr,
-                                      v=v)
-        
-        # Increment the progress bar, and update the detail text.
-        incProgress(1/n_int, detail = paste("Temp", round(winfs[i,2],2)))
-        
-        mout
-        
-      },mc.cores=4)})
-    
-    
-    winfs[,3] <- do.call(c,lapply(mouts, function(x) x[['winf']]))
-    
-    colnames(winfs) <- c('O2','Temperature','Temp')
-    
-    dPM <- bind_rows(lapply(mouts, function(x) x[['dPm']]))
-  
-    alloc <- bind_rows(lapply(mouts, function(x) x[['gout']]))
-    
-    aa <- alloc %>% 
-      group_by(Temperature) %>% 
-      summarise(ns=sum(is.na(ls)),
-                na = sum(is.na(allocs)),
-                ni = sum(!is.finite(allocs))) %>% 
-      filter(na>1 | ns >0 | ni > 1)
-    
-    alloc <- alloc %>% 
-      filter(!Temperature %in% aa$Temperature)
-    dPM <- dPM %>% 
-      filter(!Temperature %in% aa$Temperature)
-    winfs <- winfs %>% 
-      filter(!Temperature %in% aa$Temperature)
-    
-    dpj <- dPM %>% inner_join(winfs)
-    G <- rep(NA,length(winfs$Temperature))
-    for(t in 2:(length(winfs$Temperature)-1)) {
-      tau = winfs$Temperature[t]
-      this.mass <- unique(dpj$Temp[dpj$Temperature == tau])
-      if (is.na(this.mass)) next
-      tPM <- dpj$Pm[dpj$Temperature == tau & dpj$Mass == this.mass]
-      lPM <- dpj$Pm[dpj$Temperature == winfs$Temperature[t-1] & dpj$Mass == this.mass]
-      nPM <- dpj$Pm[dpj$Temperature == winfs$Temperature[t+1] & dpj$Mass == this.mass]
-      
-      sl <- (nPM-lPM)/(winfs$Temperature[t+1]-winfs$Temperature[t-1])
-      
-      G[t] <- 0.04*this.mass*sl/tPM
-    }       
-        
+    #### Step 1 get mstar=mo+slope*age for all Temp
     #browser()
-    norm <- alloc %>%
-      group_by(Temperature) %>% 
-      summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1],
-                m=ls[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1]) 
     
-    sG <- sign(G)
-    winfs$G <- G/norm$ts
-    winfs$L <- 10*(lw(winfs$Temp + winfs$G)-lw(winfs$Temp))
-    list(winfs=winfs, dPM=dPM,alloc=alloc)
-    
-  })
-  
-
-  plot_data_growth_age <- eventReactive(input$go,{
-
-    v = values()
-    lm = 10^seq(-2,6,l=v$lm)
-   
-    #browser()
-    n_int <- v$n_int
-    O2_range <- seq(1,10,l=v$n_int)
-    winfs <- data.frame(matrix(NA,n_int,3))
-    winfs[,1] <- O2_range
-    
-    
-    winfs[,2] <- seq(v$gamma*(1-v$c),v$gamma*(1+v$c),l=n_int)
-    
-    
-    taus_ref <- get_taus(v,1,10,v$temp_ref,m=lm)
-    
-    mout_ref <- model_out_par(tau_max = taus_ref$tau_max,
-                              M=v$M,
-                              v=v$v,
-                              nu=v$nu,
-                              temp=v$temp_ref,
-                              temp_ref=v$temp_ref,
-                              Ea=v$Ea,
-                              gamma=v$gamma,
-                              delta=v$delta,
-                              phi=v$phi,
-                              h=v$h,
-                              beta=v$beta,
-                              k=v$k,
-                              p=v$p,
-                              q=v$q,
-                              n=ifelse(v$n==v$q,v$n+0.1,v$n),
-                              m = lm)
-    
-    withProgress(message = 'Calculating Winf', value = 0, {
-      mouts <- parallel::mclapply(1:n_int, function(i){#parallel::mclapply(1:n_int, function(i){
-        w=v
-        w$gamma <- winfs[i,2]
-        #taus <- get_taus(w,tau_uc,winfs[i,1],v$temp_ref,m=lm)
-        #if(all(taus$tau_max<0.05)) return(data_frame(winf=0,winf_o2=0,winf_uc=0))
-        #browser()
-        # mout <- model_out_par(tau_max = taus$tau_max,
-        #                       M=v$M,
-        #                       v=v$v,
-        #                       temp=v$temp_ref,
-        #                       Ea=v$Ea,
-        #                       gamma=w$gamma,
-        #                       delta=v$delta,
-        #                       phi=v$phi,
-        #                       h=v$h,
-        #                       beta=v$beta,
-        #                       k=v$k,
-        #                       p=v$p,
-        #                       q=v$q,
-        #                       n=v$n,
-        #                       nu=v$nu,
-        #                       m = lm)
-
-
-        mout <-  model_out_growth(temp=v$temp_ref,
+    mout <- model_out_growth(temp=seq(min(v$temp),max(v$temp),l=n_int),
                                   temp_ref=v$temp_ref,
                                   l=v$lm,
                                   Ea=v$Ea,
-                                  gamma=w$gamma,
+                                  gamma=v$gamma,
                                   delta=v$delta,
                                   phi=v$phi,
                                   h=v$h,
@@ -380,18 +200,42 @@ server = function(input, output, session) {
                                   tmax = v$tmax,
                                   slope=v$slope,
                                   tr=v$tr,
-                                  v=v)
-
-        # Increment the progress bar, and update the detail text.
-        incProgress(1/n_int, detail = paste("Temp", round(winfs[i,2],2)))
-
-        mout
-
-      },mc.cores=4)})
-
-    bind_rows(mouts)
-
+                                  v=v,
+                                  lm)
+    
+    winfs <- mout$winfs
+    
+    ### Step 2 calc mat for selected response 
+    
+    #browser()
+    
+    mouts <- model_out_growth_check(temp=winfs$Temperature,
+                             temp_ref=v$temp_ref,
+                             l=v$lm,
+                             Ea=v$Ea,
+                             gamma= seq(v$gamma*(1-v$c),v$gamma*(1+v$c),l=n_int),
+                             delta=v$delta,
+                             phi=v$phi,
+                             h=v$h,
+                             beta=v$beta,
+                             k=v$k,
+                             p=v$p,
+                             q=v$q,
+                             n=v$n,
+                             mstar = lm[winfs$opt[which.min(abs(winfs$Temperature-v$temp_ref))]],
+                             tmax = v$tmax,
+                             slope=v$slope,
+                             tr=v$tr,
+                             v=v,
+                             lm)
+    
+    list(winfs=winfs,
+         growth=mout$growth,
+         g_growth=mouts$g_growth,
+         t_growth=mouts$t_growth)
+    
   })
+  
   # 
   #######################################
   ############ plots ####################
@@ -473,7 +317,7 @@ server = function(input, output, session) {
   
   output$TGvis <- renderPlot({
     plot_data_growth_tO2()[['winfs']] %>%
-      mutate(length=lw(Temp)) %>% 
+      mutate(length=lw(l)) %>% 
       ggplot() +
       geom_line(aes(x=Temperature, y=length),alpha=0.7) +
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
@@ -496,7 +340,6 @@ server = function(input, output, session) {
   
   output$Gvis <- renderPlot({
     plot_data_growth_tO2()[['winfs']] %>%
-      mutate(length=lw(Temp)) %>% 
       ggplot() +
       geom_line(aes(x=Temperature, y=L),alpha=0.7) +
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
@@ -556,18 +399,18 @@ server = function(input, output, session) {
 # 
   output$am <- renderPlot({
 
-    alloc <- plot_data_growth_age()
-    
+    alloc <- plot_data_growth_tO2()$g_growth
+    #browser()
     norm <- alloc %>% 
-      group_by(Growth) %>% 
+      group_by(Gamma) %>% 
       summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.01),which.min(abs(allocs-0.5)),NA)-1],
-                                                     m=ls[ifelse(any(abs(allocs-0.5)<0.01),which.min(abs(allocs-0.5)),NA)-1]) %>%
+                m=g_length[ifelse(any(abs(allocs-0.5)<0.01),which.min(abs(allocs-0.5)),NA)-1]) %>%
       filter(!is.na(ts))
       
-    maxx <- max(norm$ts,na.rm = T)+max(norm$ts,na.rm = T)/4
-    #browser()
+    maxx <- max(norm$ts,na.rm = T)+max(norm$ts,na.rm = T)/2
+    #
     ggplot() +
-      geom_line(aes(x=t, y=ls,col=as.factor(Growth)),data=alloc,linetype=2) +
+      geom_line(aes(x=t, y=g_length,col=as.factor(Gamma)),data=alloc,linetype=2) +
       geom_point(aes(x=ts, y=m),size=1.2,data=norm) +
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
       #theme_cowplot()+
@@ -586,7 +429,7 @@ server = function(input, output, session) {
   
   output$alloc <- renderPlot({
     #browser()
-    plot_data_growth_tO2()[['alloc']] %>%
+    plot_data_growth_tO2()[['t_growth']] %>%
     ggplot() +
       geom_line(aes(x=t, y=allocs,col=as.factor(Temperature))) +
       geom_hline(aes(yintercept=1))+
@@ -626,13 +469,13 @@ server = function(input, output, session) {
   # 
   output$ls <- renderPlot({
     
-    alloc <- plot_data_growth_tO2()[['alloc']]
+    alloc <- plot_data_growth_tO2()[['t_growth']]
     #browser()
     norm <- alloc %>% group_by(Temperature) %>% summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1],
-                                                          m=ls[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1]) 
+                                                          m=t_length[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1]) 
     
     ggplot() +
-      geom_line(aes(x=t, y=ls,col=as.factor(Temperature)),data=alloc) +
+      geom_line(aes(x=t, y=t_length,col=as.factor(Temperature)),data=alloc) +
       geom_point(aes(x=ts, y=m),data=norm) +
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
       #theme_cowplot()+
@@ -648,10 +491,10 @@ server = function(input, output, session) {
   
   output$norm <- renderPlot({
     
-    alloc <- plot_data_growth_tO2()[['alloc']]
+    alloc <- plot_data_growth_tO2()[['t_growth']]
     #browser()
     norm <- alloc %>% group_by(Temperature) %>% summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
-                                                          ls=ls[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
+                                                          ls=t_length[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
                                                           alloc=allocs[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1]) 
     
     ggplot() +
@@ -671,7 +514,7 @@ server = function(input, output, session) {
   
   output$la <- renderPlot({
     
-    alloc <- plot_data_growth_tO2()[['alloc']] 
+    alloc <- plot_data_growth_tO2()[['tg_alloc']] 
     #browser()
     norm <- alloc %>% group_by(Temperature) %>% summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1],
                                                           tq=t[ifelse(any(abs(allocs-0.75)<0.1),which.min(abs(allocs-0.75)),NA)-1],

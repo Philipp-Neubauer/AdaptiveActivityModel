@@ -140,23 +140,7 @@ plot_data_temp <- function(v){
   scope <- f*v$m^v$n-model_frame$Metabolism*v$omega
   scope[scope<0.0001] <- 0
   
-  w <- v
-  w$gamma <- seq(v$gamma*0.8,v$gamma*1.2,l=100)
-  gtau <- get_taus(w,1,10,v$temp_ref,m=v$m)$tau_max
-  
-  model_frame_g <- model_out(tau_max = gtau,
-                             temp=v$temp,
-                             Ea=v$Ea,
-                             gamma=w$gamma,
-                             delta=v$delta,
-                             phi=v$phi,
-                             h=v$h,
-                             beta=v$beta,
-                             k=v$k,
-                             p=v$p,
-                             q=v$q,
-                             n=v$n,
-                             m=v$m)
+
   
   #browser()
   bind_cols(pd,
@@ -169,8 +153,6 @@ plot_data_temp <- function(v){
               M = (tau_max*v$v+v$M)*v$m^v$nu,
               Optimum = sapply(sapply(tau,max,0),min,1),
               Scope=ifelse(scope<0.0001,0,scope),
-              Cond = model_frame_g[['C for growth']],
-              Cond_mort = (gtau*v$v+v$M)*v$m^v$nu,
               `MMR` = f*v$m^v$n,
               `Active M.` = model_frame$Metabolism*v$omega,
               `Std M.` = model_frame$Std*v$omega,
@@ -236,7 +218,7 @@ plot_data_growth_tO2 <- function(v,lm=10^seq(0,6,l=1000),n_int=20){
   tau_uc[tau_uc<0] <- 0
   tau_uc[tau_uc>1] <- 1
   
-  #browser()
+  browser()
   n_int <- n_int
   O2_range <- seq(1,10,l=n_int)
   winfs <- data.frame(matrix(NA,n_int,5))
@@ -481,6 +463,7 @@ model_out_par <- function(tau_max,
 model_out_growth <- function(temp,
                              temp_ref=15,
                              l,
+                             lm,
                              Ea,
                              gamma=50,
                              delta=2,
@@ -497,37 +480,105 @@ model_out_growth <- function(temp,
                              tr = 1,
                              v=NULL){
   
-  #browser()
+ 
+  temps = length(temp)
+  
   tc = exp(Ea*((temp+(288.2-temp_ref))-288.2)/(8.6173324*10^(-5)*(temp+(288.2-temp_ref))*288.2))
   
   ts <- seq(0,tmax,l=l)
-  s <- vector()
-  allocs <- vector()
-  s[1] <- 0.01
-
   
-  for(t in 2:l) {
-    tm1 <- get_taus(v,1,10,temp,s[t-1])$tau_max
-    f <- tm1*gamma*s[t-1]^p/(tm1*gamma*s[t-1]^p+tc*h*s[t-1]^q)
-    inp <- (1-phi-beta)*f*tc*h*s[t-1]^q
-    out <- (1+ tm1*delta)*k*tc*s[t-1]^n 
-    Es=inp-out
-    allocs[t] = min(max(allocs[t-1],inv_logit3(lw(s[t-1]),lw(mstar),ts[t],slope,tr),na.rm=T),1)
+  withProgress(message = 'Calculating Winf', value = 0, {
+    s <- array(NA, c(temps,l,l))
+    allocs <- array(NA, c(temps,l,l))
     
-    s[t] = s[t-1]+(tmax/l)*(1-allocs[t])*Es
-  }
-  ls = lw(s)
-  data_frame(Temperature=temp,
-             Growth=gamma,
-             ls=ls,
-             allocs=allocs,
-             t=ts)
+    R0 <- array(0, c(temps,l,l))
+    surv <- array(0, c(temps,l,l))
+    
+    s[,,1] <- 0.01
+    
+    for(t in 2:l) {
+      tm1 <- get_taus(v,1,10,temp,s[,,t-1])
+      f <- tm1*gamma*s[,,t-1]^p/(tm1*gamma*s[,,t-1]^p+tc*h*s[,,t-1]^q)
+      inp <- (1-phi-beta)*f*tc*h*s[,,t-1]^q
+      out <- (1+ tm1*delta)*k*tc*s[,,t-1]^n 
+      Es=inp-out
+      allocs[,,t] <- t(apply(lw(s[,,t-1]),1,inv_logit3,lw(lm),ts[t],slope,tr))
+      
+      mt <- (tm1*v$v+v$M)*s[,,t-1]^v$nu
+      surv[,,t] <- surv[,,t-1] + (tmax/(l-1))*mt
+      R0[,,t] <- R0[,,t-1] + (tmax/(l-1))*allocs[,,t]*Es*exp(-surv[,,t])
+      
+      s[,,t] <- s[,,t-1]+(tmax/(l-1))*(1-allocs[,,t])*Es
+      incProgress((tmax/(l-1))/tmax, detail = paste("Time", round(ts[t],2)))
+    }
+    ls <- lw(s)
+    opt <- apply(R0[,,l],1,function(x) ifelse(any(!is.nan(x)),which.max(x),NA))
+    
+    #browser()
+    
+    s=t(sapply(1:temps,function(x) s[x,opt[x],]))
+    allocs=t(sapply(1:temps,function(x) allocs[x,opt[x],]))
+    R0s=t(sapply(1:temps,function(x) R0[x,opt[x],]))
+    
+    lss <- reshape2::melt(s)
+    colnames(lss) <- c('Temperature','t','size')
+    lss$Temperature <- temp[lss$Temperature]
+    lss$t <- ts[lss$t]
+    lss$opt <- opt[lss$Temperature]
+    
+    alloc <- reshape2::melt(allocs)
+    colnames(alloc) <- c('Temperature','t','allocs')
+    alloc$Temperature <- temp[alloc$Temperature]
+    alloc$t <- ts[alloc$t]
+    alloc$opt <- opt[alloc$Temperature]
+    
+    R0s <- reshape2::melt(R0s)
+    colnames(R0s) <- c('Temperature','t','R0')
+    R0s$Temperature <- temp[R0s$Temperature]
+    R0s$opt <- opt[R0s$Temperature]
+    R0s$t <- ts[R0s$t]
+    
+    #browser()
+    
+    growth <- inner_join(inner_join(lss,alloc),R0s) %>% arrange(t,Temperature)
+    
+    
+    winfs <- growth %>% group_by(Temperature) %>%
+      summarise(l=size[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
+                t=t[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
+                opt=unique(opt))
+    
+    G <- rep(NA,length(unique(winfs$Temperature)))
+    
+    for(t in 2:(length(winfs$Temperature)-1)) {
+      tau = winfs$Temperature[t]
+      this.l <- winfs$l[t]
+      if (is.na(this.l)) next
+      tPM <- R0[t,opt[t],l]
+      lPM <- R0[t-1,opt[t],l]
+      nPM <- R0[t+1,opt[t],l]
+      
+      sl <- (nPM-lPM)/(winfs$Temperature[t+1]-winfs$Temperature[t-1])
+      
+      G[t] <- 0.04*this.l*sl/tPM
+    }       
+    
+    
+    sG <- sign(G)
+    winfs$G <- G/winfs$t
+    winfs$L <- 10*(lw(winfs$l + winfs$G)-lw(winfs$l))
+   
+  })
+  
+  list(winfs=winfs, growth=growth)
   
 }
 
 
 model_out_growth_check <- function(temp,
+                                   temp_ref=15,
                                    l,
+                                   lm,
                                    Ea,
                                    gamma=50,
                                    delta=2,
@@ -538,48 +589,88 @@ model_out_growth_check <- function(temp,
                                    p=0.8,
                                    q=0.9,
                                    n=0.8,
-                                   nu,
-                                   M,
-                                   v,
+                                   mstar=1000,
                                    tmax=10,
-                                   dat=NULL){
+                                   slope=0.05,
+                                   tr = 1,
+                                   v=NULL){
   
-  #browser()
-  tc = 1
+
+  temps = length(temp)
   
-  ts <- seq(1,tmax,l=l)
-  s <- vector()
-  allocs <- vector()
-  dpMs <- vector()
-  dpMs[1] <- Inf
+  tc = exp(Ea*((temp+(288.2-temp_ref))-288.2)/(8.6173324*10^(-5)*(temp+(288.2-temp_ref))*288.2))
   
-  s[1] <- 0.01
-  for(t in 2:l) {
-    tm1 <- get_taus(dat,1,10,temp,s[t-1])$tau_max
-    f <- tm1*gamma*s[t-1]^p/(tm1*gamma*s[t-1]^p+tc*h*s[t-1]^q)
-    inp <- (1-phi-beta)*f*tc*h*s[t-1]^q
-    out <- (1+ tm1*delta)*k*tc*s[t-1]^n 
-    Es=inp-out
-    dpMs[t] <- get_dPdm(m=s[t-1],tau=tm1,tc=tc,v=v,M=M,nu=nu,gamma=gamma,delta=delta,
-                        phi=phi,h=h,beta=beta,k=k,p=p,q=q,n=n)
-    allocs[t] = ifelse(abs(dpMs[t]-1)>=abs(dpMs[t-1]-1),1,0)
+  ts <- seq(0,tmax,l=l)
+  
+  withProgress(message = 'Calculating Norms', value = 0, {
+    s <- array(NA, c(temps,temps,l))
+    allocs <- array(NA, c(temps,temps,l))
+     
+    s[,,1] <- 0.01
     
-    s[t] = s[t-1]+(tmax/l)*(1-allocs[t])*Es
-  }
-  ls = lw(s)
-  #browser()
-  data_frame(Growth=gamma,
-             ls=ls,
-             allocs=allocs,
-             t=ts)
+    
+    
+    for(t in 2:l) {
+      tm1 <- sapply(1:temps,function(g) {
+        w <- v
+        w$gamma <- gamma[g]
+        get_taus(w,1,10,temp,s[,g,t-1])
+      })
+      f <- tm1*gamma*s[,,t-1]^p/(tm1*gamma*s[,,t-1]^p+tc*h*s[,,t-1]^q)
+      inp <- (1-phi-beta)*f*tc*h*s[,,t-1]^q
+      out <- (1+ tm1*delta)*k*tc*s[,,t-1]^n 
+      Es=inp-out
+      allocs[,,t] <- t(apply(lw(s[,,t-1]),1,inv_logit3,lw(mstar),ts[t],slope,tr))
+        
+      s[,,t] <- s[,,t-1]+(tmax/(l-1))*(1-allocs[,,t])*Es
+      incProgress((tmax/(l-1))/tmax, detail = paste("Time", round(ts[t],2)))
+    }
+    ls <- lw(s)
+    
+    #browser()
+    
+    ref = which.min(abs(temp-temp_ref))
+    
+    gls=t(sapply(1:temps,function(x) ls[ref,x,]))
+    gallocs=t(sapply(1:temps,function(x) allocs[ref,x,]))
+    
+    tls=t(sapply(1:temps,function(x) ls[x,ref,]))
+    tallocs=t(sapply(1:temps,function(x) allocs[x,ref,]))
+     
+    lss <- reshape2::melt(tls)
+    colnames(lss) <- c('Temperature','t','t_length')
+    lss$Temperature <- temp[lss$Temperature]
+    lss$Gamma <- gamma[ref]
+    lss$t <- ts[lss$t]
+    
+    alloc <- reshape2::melt(tallocs)
+    colnames(alloc) <- c('Temperature','t','allocs')
+    alloc$Temperature <- temp[alloc$Temperature]
+    alloc$Gamma <- gamma[ref]
+    alloc$t <- ts[alloc$t]
+    
+    
+    lgs <- reshape2::melt(gls)
+    colnames(lgs) <- c('Gamma','t','g_length')
+    lgs$Temperature <- temp[ref]
+    lgs$Gamma <- gamma[lgs$Gamma]
+    lgs$t <- ts[lgs$t]
+    
+    galloc <- reshape2::melt(gallocs)
+    colnames(galloc) <- c('Gamma','t','allocs')
+    galloc$Temperature <- temp[ref]
+    galloc$Gamma <- gamma[galloc$Gamma]
+    galloc$t <- ts[galloc$t]
+    
+    #browser()
   
-  #  (Eq*h*m^(q - 1)*nu - Eq*h*m^(q - 1)*q - (h*m^(q - 1)*nu - h*m^(q - 1)*q)*E - (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tauq)*M/(k*m^(n - 1)*n - k*m^(n - 1)*nu + (h*m^(q - 1)*nu - h*m^(q - 1)*q)*E + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau)
+  })
   
-  #  -(Eq*h*m^(q - 1)*nu*phi + (Eq*beta - Eq)*h*m^(q - 1)*nu - ((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E - (Eq*h*m^(q - 1)*phi + (Eq*beta - Eq)*h*m^(q - 1))*q + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau - (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tauq)*M/(k*m^(n - 1)*n - k*m^(n - 1)*nu - ((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau)
-  
-  #  -(((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E*tauq*v - (Eq*h*m^(q - 1)*nu*phi + (Eq*beta - Eq)*h*m^(q - 1)*nu - ((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E - (Eq*h*m^(q - 1)*phi + (Eq*beta - Eq)*h*m^(q - 1))*q + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau - (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tauq)*M - ((Eq*h*m^(q - 1)*nu*phi - k*m^(n - 1)*n + ((Eq*beta - Eq)*h*m^(q - 1) + k*m^(n - 1))*nu - (Eq*h*m^(q - 1)*phi + (Eq*beta - Eq)*h*m^(q - 1))*q)*tau + (k*m^(n - 1)*n - k*m^(n - 1)*nu)*tauq)*v)/(((beta - 1)*h*m^(q - 1)*nu + h*m^(q - 1)*nu*phi - ((beta - 1)*h*m^(q - 1) + h*m^(q - 1)*phi)*q)*E*tauq - (k*m^(n - 1)*n - k*m^(n - 1)*nu + (delta*k*m^(n - 1)*n - delta*k*m^(n - 1)*nu)*tau)*tauq)
+  list(t_growth = inner_join(lss,alloc) %>% arrange(t,Temperature),
+       g_growth = inner_join(lgs,galloc) %>% arrange(t,Temperature))
   
 }
+
 
 O2_supply <- function(O2 = 1:100,O2crit=20,P50 = 40,Tmax=30,Topt=15,T,omega=1.870,delta=1038,n=0.8){
   
@@ -642,24 +733,7 @@ eval_tau_max_temp <- function(f=O2_supply(),
 
 get_taus <- function(v,tau_uc,O2_in,temp_in,m=10^seq(0,6,l=1000)){
   #browser()
-  O2 = O2_supply(O2=O2_in,Topt=v$Topt,O2crit=v$O2crit,Tmax=v$temp[length(v$temp)],T=v$Topt,delta=v$lO,omega=v$shape,P50=v$P50,n=v$n)
-  tau_o2 = eval_tau_max_o2(f=O2,omega = v$omega,
-                           gamma=v$gamma,
-                           delta=v$delta,
-                           phi=v$phi,
-                           h=v$h,
-                           beta=v$beta,
-                           k=v$k,
-                           p=v$p,
-                           q=v$q,
-                           n=v$n,
-                           m=m)
-  
-  tau_o2 <- apply(cbind(tau_uc,tau_o2),1,min)
-  
-  tau_o2[tau_o2<0] <- 0
-  tau_o2[tau_o2>1] <- 1
-  
+ 
   O2_tcor <- O2_fact(temp_in,5)
   O2 = O2_supply(O2=10*O2_tcor,Topt=v$Topt,O2crit=v$O2crit,Tmax=v$temp[length(v$temp)],T=temp_in,delta=v$lO,omega=v$shape,P50=v$P50,n=v$n)
   max_tau <- eval_tau_max_temp(f=O2,
@@ -691,10 +765,10 @@ get_taus <- function(v,tau_uc,O2_in,temp_in,m=10^seq(0,6,l=1000)){
                           M=v$M,
                           v=v$v)
   
-  tau_max = apply(cbind(tau,max_tau),1,min)
+  tau_max = pmin(tau,max_tau)
   tau_max[tau_max<0] <- 0
   tau_max[tau_max>1] <- 1
   
-  list(tau_max=tau_max, tau_o2=tau_o2, tau=tau)
+  tau_max
   
 }
