@@ -19,7 +19,9 @@ server = function(input, output, session) {
            p=input$p,
            q=input$q,
            n=input$n,
-           m=input$m,
+           m=max(10^input$m)/4,
+           max_m=max(input$m),
+           min_m=min(input$m),
            slope=input$slope,
            tmax=input$tmax,
            tr=input$tr,
@@ -37,7 +39,8 @@ server = function(input, output, session) {
            O2crit=input$O2crit,
            M=input$M,
            v=input$v,
-           nu=input$nu)
+           nu=input$nu, 
+           dt = input$dt)
     
     #browser()
     
@@ -53,7 +56,7 @@ server = function(input, output, session) {
   plot_data_temp <- reactive({
     
     v = values()
-    lm = 10^seq(-2,5,l=v$lm)
+    lm = 10^seq(v$min_m,v$max_m,l=v$lm)
     #browser()
     out = eval_tau_eq(gamma=v$gamma,
                       delta=v$delta,
@@ -173,9 +176,9 @@ server = function(input, output, session) {
   plot_data_growth_tO2 <- eventReactive(input$go,{
     
     v = values()
-    lm = 10^seq(-2,6,l=v$lm)
+    lm = seq(10^v$min_m,10^v$max_m,l=v$lm)
     #browser()
-
+    
     #browser()
     n_int <- v$n_int
     O2_range <- seq(1,10,l=n_int)
@@ -184,36 +187,10 @@ server = function(input, output, session) {
     #browser()
     
     mout <- model_out_growth(temp=seq(min(v$temp),max(v$temp),l=n_int),
-                                  temp_ref=v$temp_ref,
-                                  l=v$lm,
-                                  Ea=v$Ea,
-                                  gamma=v$gamma,
-                                  delta=v$delta,
-                                  phi=v$phi,
-                                  h=v$h,
-                                  beta=v$beta,
-                                  k=v$k,
-                                  p=v$p,
-                                  q=v$q,
-                                  n=v$n,
-                                  mstar = mout_ref$winf,
-                                  tmax = v$tmax,
-                                  slope=v$slope,
-                                  tr=v$tr,
-                                  v=v,
-                                  lm)
-    
-    winfs <- mout$winfs
-    
-    ### Step 2 calc mat for selected response 
-    
-    #browser()
-    
-    mouts <- model_out_growth_check(temp=winfs$Temperature,
                              temp_ref=v$temp_ref,
                              l=v$lm,
                              Ea=v$Ea,
-                             gamma= seq(v$gamma*(1-v$c),v$gamma*(1+v$c),l=n_int),
+                             gamma=v$gamma,
                              delta=v$delta,
                              phi=v$phi,
                              h=v$h,
@@ -222,12 +199,38 @@ server = function(input, output, session) {
                              p=v$p,
                              q=v$q,
                              n=v$n,
-                             mstar = lm[winfs$opt[which.min(abs(winfs$Temperature-v$temp_ref))]],
                              tmax = v$tmax,
                              slope=v$slope,
                              tr=v$tr,
                              v=v,
-                             lm)
+                             lm=lw(lm),
+                             dt=v$dt)
+    
+    winfs <- mout$winfs
+    
+    ### Step 2 calc mat for selected response 
+    
+    #browser()
+    
+    mouts <- model_out_growth_check(temp=winfs$Temperature,
+                                    temp_ref=v$temp_ref,
+                                    Ea=v$Ea,
+                                    gamma= seq(v$gamma*(1-v$c),v$gamma*(1+v$c),l=n_int),
+                                    delta=v$delta,
+                                    phi=v$phi,
+                                    h=v$h,
+                                    beta=v$beta,
+                                    k=v$k,
+                                    p=v$p,
+                                    q=v$q,
+                                    n=v$n,
+                                    mstar = lw(lm[winfs$opt[which.min(abs(winfs$Temperature-v$temp_ref))]]),
+                                    tmax = v$tmax,
+                                    slope=v$slope,
+                                    tr=v$tr,
+                                    v=v,
+                                    v$dt,
+                                    lm=lw(lm))
     
     list(winfs=winfs,
          growth=mout$growth,
@@ -396,9 +399,9 @@ server = function(input, output, session) {
            x='Length (cm)')
   }, bg="transparent",type = "cairo-png")
   
-# 
+  # 
   output$am <- renderPlot({
-
+    
     alloc <- plot_data_growth_tO2()$g_growth
     #browser()
     norm <- alloc %>% 
@@ -406,7 +409,7 @@ server = function(input, output, session) {
       summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.01),which.min(abs(allocs-0.5)),NA)-1],
                 m=g_length[ifelse(any(abs(allocs-0.5)<0.01),which.min(abs(allocs-0.5)),NA)-1]) %>%
       filter(!is.na(ts))
-      
+    
     maxx <- max(norm$ts,na.rm = T)+max(norm$ts,na.rm = T)/2
     #
     ggplot() +
@@ -425,12 +428,12 @@ server = function(input, output, session) {
       labs(y = 'Length (cm)',
            x='Age (years)')
   }, bg="transparent",type = "cairo-png")
-
+  
   
   output$alloc <- renderPlot({
     #browser()
     plot_data_growth_tO2()[['t_growth']] %>%
-    ggplot() +
+      ggplot() +
       geom_line(aes(x=t, y=allocs,col=as.factor(Temperature))) +
       geom_hline(aes(yintercept=1))+
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
@@ -472,11 +475,18 @@ server = function(input, output, session) {
     alloc <- plot_data_growth_tO2()[['t_growth']]
     #browser()
     norm <- alloc %>% group_by(Temperature) %>% summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1],
-                                                          m=t_length[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1]) 
+                                                          t1=t[ifelse(any(abs(allocs-0.1)<0.1),which.min(abs(allocs-0.1)),NA)-1],
+                                                          t3=t[ifelse(any(abs(allocs-0.9)<0.1),which.min(abs(allocs-0.9)),NA)-1],
+                                                          m=t_length[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1],
+                                                          
+                                                          q1=t_length[ifelse(any(abs(allocs-0.1)<0.1),which.min(abs(allocs-0.1)),NA)-1],
+                                                          q3=t_length[ifelse(any(abs(allocs-0.9)<0.1),which.min(abs(allocs-0.9)),NA)-1]) 
     
     ggplot() +
       geom_line(aes(x=t, y=t_length,col=as.factor(Temperature)),data=alloc) +
-      geom_point(aes(x=ts, y=m),data=norm) +
+      geom_point(aes(x=ts, y=m), col='orange2',data=norm) +
+      geom_point(aes(x=t1, y=q1),col='skyblue4',data=norm) +
+      geom_point(aes(x=t3, y=q3),col='skyblue4',data=norm) +
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
       #theme_cowplot()+
       viridis::scale_colour_viridis(discrete = T,guide='none')+
@@ -495,10 +505,12 @@ server = function(input, output, session) {
     #browser()
     norm <- alloc %>% group_by(Temperature) %>% summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
                                                           ls=t_length[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
+                                                          l=max(t_length, na.rm=T),
                                                           alloc=allocs[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1]) 
     
     ggplot() +
-      geom_line(aes(x=Temperature, y=ls),col='green',data=norm) +
+      geom_line(aes(x=Temperature, y=ls),col='orange2',data=norm) +
+      geom_line(aes(x=Temperature, y=l),col='skyblue4',data=norm) +
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
       #theme_cowplot()+
       #viridis::scale_colour_viridis(discrete = T,guide='none')+
