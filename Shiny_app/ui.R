@@ -6,6 +6,8 @@ library(shinydashboard)
 library(ggplot2)
 library(ggvis)
 
+options(shiny.sanitize.errors = F)
+
 JScode <-
   "$(function() {
     setTimeout(function(){
@@ -31,30 +33,30 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
     
     # Sidebar with sliders that demonstrate various available options
     sidebar = dashboardSidebar(width = 420,
-                               sliderInput("m", 'Mass range', min=-4, max=6, value=c(-2,2),width = 350,dragRange = T),
-                               sliderInput("lm", 'dMass', min=100, max=10000, value=100,width = 350),
-                               sliderInput("dt", 'dt', min=100, max=10000, value=100,width = 350),
-                               sliderInput("n_int", 'dTemp', min=10, max=100, value=30,width = 350),
+                               sliderInput("m", 'Mass range', min=-4, max=6, value=c(-2,3),width = 350,dragRange = T),
+                               sliderInput("lm", 'dMass', min=100, max=10000, value=400,width = 350),
+                               sliderInput("dt", 'dt', min=100, max=10000, value=400,width = 350),
+                               sliderInput("n_int", 'dTemp', min=10, max=100, value=50,width = 350),
                                fluidRow(column(12,h3("Run Simulations"),offset = 3)),
                                fluidRow(column(1,actionButton("go", "Go"),offset = 4)),
                                fluidRow(column(1,h3(""),offset = 4)),
                                           
                                tabsetPanel(id="tabs",
                                            tabPanel(title = 'RN',tabName ='RN',
-                                                    sliderInput("tmax", 'Max time', min=0, max=100, value=50,width = 350),
-                                                    sliderInput("slope", 'Reaction norm slope', min=-2, max=2, value=-0.2,step=0.01,width = 350),
-                                                    sliderInput("tr", 'Reaction', min=0, max=2, value=0.5,step=0.05,width = 350),
+                                                    sliderInput("tmax", 'Max time', min=0, max=100, value=25,width = 350),
+                                                    sliderInput("slope", 'Reaction norm slope', min=-2, max=2, value=0,step=0.01,width = 350),
+                                                    sliderInput("tr", 'Reaction', min=0, max=2, value=1,step=0.05,width = 350),
                                                     sliderInput("c", 'Env change', min=0, max=1, value=0.3,step=0.1,width = 350)
                                            ),
                                            tabPanel(title = 'Trophic',tabName ='Foraging',
                                                     sliderInput("gamma", 'Maximum encountered food', min=1, max=100, 
-                                                                value=40,
+                                                                value=60,
                                                                   animate = animationOptions(interval=3000)),
-                                                    sliderInput("h", 'Maximum ingestion', min=1, max=100, value=40,
+                                                    sliderInput("h", 'Maximum ingestion', min=1, max=100, value=30,
                                                                   animate = animationOptions(interval=3000)),
-                                                    sliderInput("p", 'Consumption scaling', min=0.5, max=1, value=0.75,
+                                                    sliderInput("p", 'Consumption scaling', min=0.5, max=1, value=0.8,
                                                                 animate = animationOptions(interval=3000)),
-                                                    sliderInput("q", 'Maximum intake scaling', min=0.5, max=1, value=0.75,
+                                                    sliderInput("q", 'Maximum intake scaling', min=0.5, max=1, value=0.8,
                                                                 animate = animationOptions(interval=3000)),
                                                     sliderInput("M", 'M', min=0.01, max=1,step = 0.01,
                                                                 value=0.1,animate = animationOptions(interval=3000)),
@@ -70,14 +72,14 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                                                   animate = animationOptions(interval=3000)),
                                                     sliderInput("delta", "Activity cost", min=0.2, max=10, value=4,
                                                                   animate = animationOptions(interval=3000)),
-                                                    sliderInput("k", "Std metabolism", min=0.2, max=10, value=1.5,
+                                                    sliderInput("k", "Std metabolism", min=0.2, max=10, value=1,
                                                                   animate = animationOptions(interval=3000)),
                                                     sliderInput("n", 'Scaling', min=0.5, max=1, value=0.88,
                                                                 animate = animationOptions(interval=3000))),
                                            tabPanel(title = 'O2',tabName ='O2',
                                                     sliderInput("P50", 'P50', min=0, max=10, value=4.2,
                                                                 animate = animationOptions(interval=3000)),
-                                                    sliderInput("lO", 'Max O2', min=0.05, max=5, value=2,step=0.1,
+                                                    sliderInput("lO", 'Max O2', min=0.05, max=5, value=0.5,step=0.1,
                                                                 animate = animationOptions(interval=3000)),
                                                     sliderInput("O2crit", 'Critical O2', min=0, max=10, value=2,step=0.2,
                                                                 animate = animationOptions(interval=3000)),
@@ -108,7 +110,8 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                fluidRow(column(6,plotOutput("am")),column(6,plotOutput("alloc"))),
                fluidRow(column(6,plotOutput("ls")),column(6,plotOutput("norm")))),
       tabPanel('Evo reaction',
-               fluidRow(column(6,plotOutput("TGvis")),column(6,plotOutput("Gvis"))))
+               fluidRow(column(6,plotOutput("TGvis")),column(6,plotOutput("Gvis"))),
+               plotOutput("R0"))
              
     ))
     
