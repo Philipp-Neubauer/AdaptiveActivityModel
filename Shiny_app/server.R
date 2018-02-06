@@ -58,44 +58,29 @@ server = function(input, output, session) {
     v = values()
     lm = 10^seq(v$min_m,v$max_m,l=v$lm)
     #browser()
-    out = eval_tau_eq(gamma=v$gamma,
-                      delta=v$delta,
-                      phi=v$phi,
-                      h=v$h,
-                      beta=v$beta,
-                      k=v$k,
-                      p=v$p,
-                      q=v$q,
-                      n=v$n,
-                      m=lm,
-                      M=v$M,
-                      v=v$v)
+    out = eval_tau_eq_temp(temp=v$temp_ref,
+                           temp_ref=v$temp_ref,
+                           Ea=v$Ea,
+                           gamma=v$gamma,
+                           delta=v$delta,
+                           phi=v$phi,
+                           h=v$h,
+                           beta=v$beta,
+                           k=v$k,
+                           p=v$p,
+                           q=v$q,
+                           n=v$n,
+                           m=v$m,
+                           M=v$M,
+                           v=v$v)
     
     pd <- data.frame(m=lm)
     pd$tau_uc <- out
     
     #browser()
-    O2 = O2_supply(O2=seq(1,10,l=length(v$temp)),Topt=v$Topt,O2crit=v$O2crit,Tmax=v$temp[length(v$temp)],T=v$Topt,delta=v$lO,omega=v$shape,P50=v$P50,n=v$n)
-    tau_o2 = sapply(eval_tau_max_o2(f=O2,omega = v$omega,
-                                    gamma=v$gamma,
-                                    delta=v$delta,
-                                    phi=v$phi,
-                                    h=v$h,
-                                    beta=v$beta,
-                                    k=v$k,
-                                    p=v$p,
-                                    q=v$q,
-                                    n=v$n,
-                                    m=v$m
-    ),min,out)
-    
-    tau_o2[tau_o2<0] <- 0
-    tau_o2[tau_o2>1] <- 1
-    
-    o2frame <- data.frame(O2=seq(1,10,l=v$lm),tau_o2 = tau_o2)
-    
+   
     O2_tcor <- O2_fact(v$temp,5)
-    f=O2_supply(10*O2_tcor,Topt=v$Topt,O2crit=v$O2crit,Tmax=v$temp[length(v$temp)],T=v$temp,delta=v$lO,omega=v$shape,P50=v$P50,n=v$n)
+    f=O2_supply(10*O2_tcor,Topt=v$Topt,O2crit=v$O2crit,Tmax=v$temp[length(v$temp)],T=v$temp,delta=v$lO,omega=v$shape,P50=v$P50)
     #browser()
     max_tau <- eval_tau_max_temp(f=f,
                                  temp=v$temp,
@@ -149,14 +134,13 @@ server = function(input, output, session) {
     
     
     #browser()
-    scope <- f*v$m^v$n-model_frame$Metabolism*v$omega
+    scope <- f*v$m-model_frame$Metabolism*v$omega
     scope[scope<0.0001] <- 0
     #browser()
     
     
     
     bind_cols(pd,
-              o2frame,
               model_frame,
               data_frame(
                 Temperature=v$temp,
@@ -165,7 +149,7 @@ server = function(input, output, session) {
                 M = (tau_max*v$v+v$M)*v$m^v$nu,
                 Optimum = sapply(sapply(tau,max,0),min,1),
                 Scope=ifelse(scope<0.0001,0,scope),
-                `MMR` = f*v$m^v$n,
+                `MMR` = f*v$m,
                 `Active M.` = model_frame$Metabolism*v$omega,
                 `Std M.` = model_frame$Std*v$omega,
                 Viable = as.numeric(tau_max>0.0001 & model_frame[['C for growth']]>0.0001))
@@ -234,6 +218,7 @@ server = function(input, output, session) {
     
     list(winfs=winfs,
          growth=mout$growth,
+         R0=mout$R0s,
          g_growth=mouts$g_growth,
          t_growth=mouts$t_growth)
     
@@ -474,13 +459,13 @@ server = function(input, output, session) {
     
     alloc <- plot_data_growth_tO2()[['t_growth']]
     #browser()
-    norm <- alloc %>% group_by(Temperature) %>% summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1],
-                                                          t1=t[ifelse(any(abs(allocs-0.1)<0.1),which.min(abs(allocs-0.1)),NA)-1],
-                                                          t3=t[ifelse(any(abs(allocs-0.9)<0.1),which.min(abs(allocs-0.9)),NA)-1],
-                                                          m=t_length[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1],
+    norm <- alloc %>% group_by(Temperature) %>% summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
+                                                          t1=t[ifelse(any(abs(allocs-0.1)<0.05),which.min(abs(allocs-0.1)),NA)-1],
+                                                          t3=t[ifelse(any(abs(allocs-0.9)<0.05),which.min(abs(allocs-0.9)),NA)-1],
+                                                          m=t_length[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
                                                           
-                                                          q1=t_length[ifelse(any(abs(allocs-0.1)<0.1),which.min(abs(allocs-0.1)),NA)-1],
-                                                          q3=t_length[ifelse(any(abs(allocs-0.9)<0.1),which.min(abs(allocs-0.9)),NA)-1]) 
+                                                          q1=t_length[ifelse(any(abs(allocs-0.1)<0.05),which.min(abs(allocs-0.1)),NA)-1],
+                                                          q3=t_length[ifelse(any(abs(allocs-0.9)<0.05),which.min(abs(allocs-0.9)),NA)-1]) 
     
     ggplot() +
       geom_line(aes(x=t, y=t_length,col=as.factor(Temperature)),data=alloc) +
@@ -528,12 +513,12 @@ server = function(input, output, session) {
     
     alloc <- plot_data_growth_tO2()[['tg_alloc']] 
     #browser()
-    norm <- alloc %>% group_by(Temperature) %>% summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1],
-                                                          tq=t[ifelse(any(abs(allocs-0.75)<0.1),which.min(abs(allocs-0.75)),NA)-1],
-                                                          tp=t[ifelse(any(abs(allocs-0.25)<0.1),which.min(abs(allocs-0.25)),NA)-1],
-                                                          m=ls[ifelse(any(abs(allocs-0.5)<0.1),which.min(abs(allocs-0.5)),NA)-1],
-                                                          qs=ls[ifelse(any(abs(allocs-0.75)<0.1),which.min(abs(allocs-0.75)),NA)-1],
-                                                          ps=ls[ifelse(any(abs(allocs-0.25)<0.1),which.min(abs(allocs-0.25)),NA)-1]) 
+    norm <- alloc %>% group_by(Temperature) %>% summarise(ts=t[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
+                                                          tq=t[ifelse(any(abs(allocs-0.75)<0.05),which.min(abs(allocs-0.75)),NA)-1],
+                                                          tp=t[ifelse(any(abs(allocs-0.25)<0.05),which.min(abs(allocs-0.25)),NA)-1],
+                                                          m=ls[ifelse(any(abs(allocs-0.5)<0.05),which.min(abs(allocs-0.5)),NA)-1],
+                                                          qs=ls[ifelse(any(abs(allocs-0.75)<0.05),which.min(abs(allocs-0.75)),NA)-1],
+                                                          ps=ls[ifelse(any(abs(allocs-0.25)<0.05),which.min(abs(allocs-0.25)),NA)-1]) 
     m <- norm %>% select(-ts,-tq,-tp) %>% tidyr::gather(Length,mass,m,qs,ps)
     t <- norm %>% select(-m,-qs,-ps) %>% tidyr::gather(Age,age,ts,tq,tp)
     norm <- cbind(m,t%>% select(-Temperature))
@@ -553,6 +538,22 @@ server = function(input, output, session) {
       labs(y = 'Length (cm)',
            x='Age (years)')
   }, bg="transparent",type = "cairo-png")
+  
+  output$R0 <- renderPlot({
+    
+  R0s <- plot_data_growth_tO2()[['R0']]
+  
+  ggplot(R0s) + 
+    geom_line(aes(x=Temperature, y=R0)) +
+    theme_cowplot()+
+    theme(
+      panel.background = element_blank(),
+      plot.background = element_blank())+
+    labs(x = expression("Mean temperature " ( degree*C)),
+         y='R0') 
+  
+  }, bg="transparent",type = "cairo-png")
+  
   
   output$MEplot <- renderPlot({
     #browser()

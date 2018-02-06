@@ -1,10 +1,13 @@
 name: SizingtheFxofClimateChange
 title:
+username:
 account: dragonfly-science
 server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
 appId: 120352
-bundleId: 941459
+bundleId: 1207620
 url: https://dragonfly-science.shinyapps.io/SizingtheFxofClimateChange/
-when: 1502790460.95973
+when: 1517806485.38563
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: tauplot.pdf
