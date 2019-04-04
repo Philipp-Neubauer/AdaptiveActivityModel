@@ -188,7 +188,7 @@ model_out_growth <- function(temp,
    
   })
   
-  list(winfs=winfs, growth=growth, R0s  = data.frame(R0=R0[,which.min(abs(winfs$Temperature-v$temp_ref)),dt],
+  list(winfs=winfs, growth=growth, R0s  = data.frame(R0=sapply(1:nrow(R0[,,dt]),function(x) R0[x,opt[x],dt]),
                                                      Temperature = winfs$Temperature))
   
   
@@ -223,21 +223,23 @@ model_out_growth_check <- function(temp,
   ts <- seq(0,tmax,l=dt)
   
   withProgress(message = 'Calculating Norms', value = 0, {
-    s <- array(0, c(temps,temps,dt))
-    allocs <- array(0, c(temps,temps,dt))
+    s <- array(0, c(temps,length(gamma),dt))
+    allocs <- array(0, c(temps,length(gamma),dt))
      
     s[,,1] <-  min(wl(lm))
     
     dts <- (tmax/(dt-1))
+    gammas <- matrix(gamma,temps,length(gamma),byrow = T)
+    gs <- length(gamma)
     
     for(t in 2:dt) {
-      tm1 <- sapply(1:temps,function(g) {
+      tm1 <- sapply(1:gs,function(g) {
         w <- v
         w$gamma <- gamma[g]
         get_taus(w,1,10,temp,s[,g,t-1])
       })
-      f <- (tm1*gamma*s[,,t-1]^p/(tm1*gamma*s[,,t-1]^p+tc*h*s[,,t-1]^q))
-      Es <- (1-phi-beta)*(tm1*gamma*s[,,t-1]^p/(tm1*gamma*s[,,t-1]^p+tc*h*s[,,t-1]^q))*tc*h*s[,,t-1]^q-k*tc*s[,,t-1]^n-tm1*delta*k*tc*s[,,t-1]
+      f <- (tm1*gammas*s[,,t-1]^p/(tm1*gammas*s[,,t-1]^p+tc*h*s[,,t-1]^q))
+      Es <- (1-phi-beta)*f*tc*h*s[,,t-1]^q-k*tc*s[,,t-1]^n-tm1*delta*k*tc*s[,,t-1]
       allocs[,,t] <- pmax(allocs[,,t-1],t(apply(lw(s[,,t-1]),1,inv_logit3,mstar,ts[t],slope,tr)))
         
       s[,,t] <- s[,,t-1]+dts*(1-allocs[,,t])*Es
@@ -248,23 +250,24 @@ model_out_growth_check <- function(temp,
     #browser()
     
     ref = which.min(abs(temp-temp_ref))
+    refg = which.min(abs(gamma-v$gamma))
     
-    gls=t(sapply(1:temps,function(x) ls[ref,x,]))
-    gallocs=t(sapply(1:temps,function(x) allocs[ref,x,]))
+    gls=t(sapply(1:gs,function(x) ls[ref,x,]))
+    gallocs=t(sapply(1:gs,function(x) allocs[ref,x,]))
     
-    tls=t(sapply(1:temps,function(x) ls[x,ref,]))
-    tallocs=t(sapply(1:temps,function(x) allocs[x,ref,]))
+    tls=t(sapply(1:temps,function(x) ls[x,refg,]))
+    tallocs=t(sapply(1:temps,function(x) allocs[x,refg,]))
      
     lss <- reshape2::melt(tls)
     colnames(lss) <- c('Temperature','t','t_length')
     lss$Temperature <- temp[lss$Temperature]
-    lss$Gamma <- gamma[ref]
+    lss$Gamma <- gamma[refg]
     lss$t <- ts[lss$t]
     
     alloc <- reshape2::melt(tallocs)
     colnames(alloc) <- c('Temperature','t','allocs')
     alloc$Temperature <- temp[alloc$Temperature]
-    alloc$Gamma <- gamma[ref]
+    alloc$Gamma <- gamma[refg]
     alloc$t <- ts[alloc$t]
     
     

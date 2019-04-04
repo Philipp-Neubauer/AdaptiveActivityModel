@@ -33,10 +33,12 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
     
     # Sidebar with sliders that demonstrate various available options
     sidebar = dashboardSidebar(width = 420,
-                               sliderInput("m", 'Mass range', min=-4, max=6, value=c(-2,3),width = 350,dragRange = T),
-                               sliderInput("lm", 'dMass', min=100, max=10000, value=400,width = 350),
-                               sliderInput("dt", 'dt', min=100, max=10000, value=400,width = 350),
+                               sliderInput("m", 'Mass for physio plots (g; log10)', min=0, max=5, value=2,width = 350),
+                               sliderInput("mr", 'Mass range (g; log10)', min=-4, max=6, value=c(-2,3),width = 350,dragRange = T),
+                               sliderInput("lm", 'dMass', min=10, max=10000, value=100,width = 350),
+                               sliderInput("dt", 'dt', min=100, max=10000, value=100,width = 350),
                                sliderInput("n_int", 'dTemp', min=10, max=100, value=50,width = 350),
+                               selectInput("def",'Default values',choices=c('M strategy' = 'M','P strategy' = 'P'),selected='M'),
                                fluidRow(column(12,h3("Run Simulations"),offset = 3)),
                                fluidRow(column(1,actionButton("go", "Go"),offset = 4)),
                                fluidRow(column(1,h3(""),offset = 4)),
@@ -45,7 +47,7 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
                                            tabPanel(title = 'RN',tabName ='RN',
                                                     sliderInput("tmax", 'Max time', min=0, max=100, value=25,width = 350),
                                                     sliderInput("slope", 'Reaction norm slope', min=-2, max=2, value=0,step=0.01,width = 350),
-                                                    sliderInput("tr", 'Reaction', min=0, max=2, value=1,step=0.05,width = 350),
+                                                    sliderInput("tr", 'Reaction', min=0, max=2, value=0.5,step=0.05,width = 350),
                                                     sliderInput("c", 'Env change', min=0, max=1, value=0.3,step=0.1,width = 350)
                                            ),
                                            tabPanel(title = 'Trophic',tabName ='Foraging',
@@ -116,3 +118,4 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
     ))
     
     )}
+  

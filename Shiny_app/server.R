@@ -8,6 +8,26 @@ source('FA_model.R')
 
 server = function(input, output, session) {
   
+  
+  observe({
+  
+    k <- ifelse(input$def == 'M',1,1.5)
+    h <- ifelse(input$def == 'M',30,60)
+    M <- ifelse(input$def == 'M',0.1,1)
+    rho <- ifelse(input$def == 'M',6,1)
+    delta <- ifelse(input$def == 'M',4,2)
+    n <- ifelse(input$def == 'M',0.88,0.75)
+    lO <- ifelse(input$def == 'M',0.5,1)
+    
+    updateSliderInput(session,"k", "Std metabolism", min=0.2, max=10, value=k)
+    updateSliderInput(session,"h", 'Maximum ingestion', min=1, max=100, value=h)
+    updateSliderInput(session,"delta", "Activity cost", min=0.2, max=10, value=delta)
+    updateSliderInput(session,"n", 'Scaling', min=0.5, max=1, value=n)
+    updateSliderInput(session,"M", 'M', min=0.01, max=1,step = 0.01, value=M)
+    updateSliderInput(session,"v", 'Mortality coeff', min=0, max=10, value=rho)
+    updateSliderInput(session,"lO", 'Max O2', min=0.05, max=5, value=lO)
+  })
+  
   values <- reactive({
     
     v=list(gamma=input$gamma,
@@ -19,9 +39,9 @@ server = function(input, output, session) {
            p=input$p,
            q=input$q,
            n=input$n,
-           m=max(10^input$m)/4,
-           max_m=max(input$m),
-           min_m=min(input$m),
+           m=10^input$m,
+           max_m=max(input$mr),
+           min_m=min(input$mr),
            slope=input$slope,
            tmax=input$tmax,
            tr=input$tr,
@@ -199,7 +219,7 @@ server = function(input, output, session) {
     mouts <- model_out_growth_check(temp=winfs$Temperature,
                                     temp_ref=v$temp_ref,
                                     Ea=v$Ea,
-                                    gamma= seq(v$gamma*(1-v$c),v$gamma*(1+v$c),l=n_int),
+                                    gamma= seq(v$gamma*(1-v$c),v$gamma*(1+v$c),l=n_int/2),
                                     delta=v$delta,
                                     phi=v$phi,
                                     h=v$h,
@@ -348,11 +368,11 @@ server = function(input, output, session) {
       mutate(length=lw(Mass))
     
     ggplot(dPm) +
-      geom_line(aes(x=length, y=dPm,col=as.factor(Temperature))) +
+      geom_line(aes(x=length, y=dPm,col=Temperature,group=as.factor(Temperature))) +
       geom_hline(aes(yintercept=1))+
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
       #theme_cowplot()+
-      viridis::scale_colour_viridis(discrete = T,guide='none')+
+      scale_colour_viridis_c('Temperature',option = 'E')+
       theme(
         panel.background = element_blank(),
         plot.background = element_blank())+
@@ -369,11 +389,11 @@ server = function(input, output, session) {
       mutate(length=lw(Mass))
     
     ggplot(Pm) +
-      geom_line(aes(x=length, y=Pm,col=as.factor(Temperature))) +
+      geom_line(aes(x=length, y=Pm,col=Temperature,group=as.factor(Temperature))) +
       geom_hline(aes(yintercept=1))+
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
       #theme_cowplot()+
-      viridis::scale_colour_viridis(discrete = T,guide='none')+
+      scale_colour_viridis_c('Temperature',option = 'E')+
       theme(
         panel.background = element_blank(),
         plot.background = element_blank())+
@@ -398,11 +418,11 @@ server = function(input, output, session) {
     maxx <- max(norm$ts,na.rm = T)+max(norm$ts,na.rm = T)/2
     #
     ggplot() +
-      geom_line(aes(x=t, y=g_length,col=as.factor(Gamma)),data=alloc,linetype=2) +
+      geom_line(aes(x=t, y=g_length,col=Gamma,group=as.factor(Gamma)),data=alloc,linetype=2) +
       geom_point(aes(x=ts, y=m),size=1.2,data=norm) +
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
       #theme_cowplot()+
-      viridis::scale_colour_viridis(discrete = T,guide='none')+
+      scale_colour_viridis_c('Food availability')+
       theme(
         panel.background = element_blank(),
         plot.background = element_blank())+
@@ -419,11 +439,11 @@ server = function(input, output, session) {
     #browser()
     plot_data_growth_tO2()[['t_growth']] %>%
       ggplot() +
-      geom_line(aes(x=t, y=allocs,col=as.factor(Temperature))) +
+      geom_line(aes(x=t, y=allocs,group=as.factor(Temperature),col=Temperature)) +
       geom_hline(aes(yintercept=1))+
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
       #theme_cowplot()+
-      viridis::scale_colour_viridis(discrete = T,guide='none')+
+      scale_colour_viridis_c('Temperature',option = 'E')+
       theme(
         panel.background = element_blank(),
         plot.background = element_blank())+
@@ -468,13 +488,13 @@ server = function(input, output, session) {
                                                           q3=t_length[ifelse(any(abs(allocs-0.9)<0.05),which.min(abs(allocs-0.9)),NA)-1]) 
     
     ggplot() +
-      geom_line(aes(x=t, y=t_length,col=as.factor(Temperature)),data=alloc) +
+      geom_line(aes(x=t, y=t_length,group=as.factor(Temperature),col=Temperature),data=alloc) +
       geom_point(aes(x=ts, y=m), col='orange2',data=norm) +
       geom_point(aes(x=t1, y=q1),col='skyblue4',data=norm) +
       geom_point(aes(x=t3, y=q3),col='skyblue4',data=norm) +
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
       #theme_cowplot()+
-      viridis::scale_colour_viridis(discrete = T,guide='none')+
+      scale_colour_viridis_c('Temperature',option = 'E')+
       theme(
         panel.background = element_blank(),
         plot.background = element_blank())+
@@ -524,11 +544,11 @@ server = function(input, output, session) {
     norm <- cbind(m,t%>% select(-Temperature))
     
     ggplot() +
-      geom_line(aes(x=age, y=mass,col=as.factor(Temperature)),data=norm) +
-      geom_point(aes(x=age, y=mass,col=as.factor(Temperature)),data=norm) +
+      geom_line(aes(x=age, y=mass,group=as.factor(Temperature),col=Temperature),data=norm) +
+      geom_point(aes(x=age, y=mass,group=as.factor(Temperature),col=Temperature),data=norm) +
       #geom_point(data=growth_scenarios[seq.int(1,nrow(growth_scenarios),by = 5),],aes(x=Temperature, y=Temp, col=Scenario,shape=Scenario),alpha=0.5,size=2) +
       #theme_cowplot()+
-      viridis::scale_colour_viridis(discrete = T,guide='none')+
+      scale_colour_viridis('Temperature',option = 'E')+
       theme(
         panel.background = element_blank(),
         plot.background = element_blank())+
