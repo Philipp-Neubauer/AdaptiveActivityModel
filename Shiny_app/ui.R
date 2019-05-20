@@ -33,12 +33,12 @@ theme_default <- function() theme_bw()+theme(panel.grid=element_blank())
     
     # Sidebar with sliders that demonstrate various available options
     sidebar = dashboardSidebar(width = 420,
-                               sliderInput("m", 'Mass for physio plots (g; log10)', min=0, max=5, value=2,width = 350),
-                               sliderInput("mr", 'Mass range (g; log10)', min=-4, max=6, value=c(-2,3),width = 350,dragRange = T),
-                               sliderInput("lm", 'dMass', min=10, max=10000, value=100,width = 350),
-                               sliderInput("dt", 'dt', min=100, max=10000, value=100,width = 350),
+                               sliderInput("m", 'Mass for physio plots (g; log10)', min=-3, max=5, value=2,width = 350),
+                               sliderInput("mr", 'Mass range (g; log10)', min=-3, max=6, value=c(-2,3),width = 350,dragRange = T),
+                               sliderInput("lm", 'dMass', min=100, max=1000, value=100,width = 350,step=100),
+                               sliderInput("dt", 'dt', min=100, max=1000, value=100,width = 350,step=100),
                                sliderInput("n_int", 'dTemp', min=10, max=100, value=50,width = 350),
-                               selectInput("def",'Default values',choices=c('M strategy' = 'M','P strategy' = 'P'),selected='M'),
+                               selectInput("def",'Default values',choices=c('Slow strategy' = 'M','Fast strategy' = 'P'),selected='M'),
                                fluidRow(column(12,h3("Run Simulations"),offset = 3)),
                                fluidRow(column(1,actionButton("go", "Go"),offset = 4)),
                                fluidRow(column(1,h3(""),offset = 4)),

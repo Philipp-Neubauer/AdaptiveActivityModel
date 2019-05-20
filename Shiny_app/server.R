@@ -15,7 +15,7 @@ server = function(input, output, session) {
     h <- ifelse(input$def == 'M',30,60)
     M <- ifelse(input$def == 'M',0.1,1)
     rho <- ifelse(input$def == 'M',6,1)
-    delta <- ifelse(input$def == 'M',4,2)
+    delta <- ifelse(input$def == 'M',4,4)
     n <- ifelse(input$def == 'M',0.88,0.75)
     lO <- ifelse(input$def == 'M',0.5,1)
     
@@ -301,6 +301,7 @@ server = function(input, output, session) {
     plot_data_temp() %>%
       mutate(Consumption=sc(Consumption),
              Efficiency=sc(Efficiency),
+             M = sc(M),
              `C for growth` = ifelse(`C for growth`<0,0,`C for growth`),
              `Available Energy` = sc(`C for growth`)) %>% 
       tidyr::gather(Rate,value,`Feeding level`,`Available Energy`,M) %>%
